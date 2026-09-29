@@ -351,6 +351,11 @@
     #drawer { position: fixed; top: 0; right: 0; height: 100%; width: min(460px, 100%); background: #fff; color: #111; z-index: 200; transform: translateX(100%); transition: transform 0.3s ease; box-shadow: -10px 0 40px rgba(0,0,0,0.2); overflow-y: auto; padding: 30px; }
     #drawer.open { transform: none; }
     #drawer.wide { width: min(760px, 100%); }
+    .pdf-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; gap: 12px; flex-wrap: wrap; }
+    .pdf-toolbar .name { font-weight: 700; font-size: 15px; }
+    .pdf-pages { display: flex; flex-direction: column; gap: 18px; align-items: center; }
+    .pdf-pages canvas { max-width: 100%; height: auto; box-shadow: 0 2px 14px rgba(0,0,0,0.15); border: 1px solid #ddd; }
+    .pdf-loading { padding: 60px 0; text-align: center; color: #777; font-size: 13px; }
     .dr-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 26px; }
     .dr-top button { background: none; border: 0; font: 500 11px 'DM Mono', monospace; color: #555; }
     #drawer h2 { font-size: 30px; letter-spacing: -0.04em; line-height: 1.1; margin-bottom: 8px; }
@@ -379,6 +384,7 @@
     .pdf-block .pdf-ico { font-size: 26px; }
     .pdf-block .pdf-name { font-weight: 700; font-size: 14px; }
     .pdf-block .pdf-hint { font-size: 11px; color: #777; }
+    #la-pdf-name { font-size: 12px; color: #34d399; margin-top: 6px; }
     #chat-bubble { position: fixed; bottom: 26px; right: 26px; width: 58px; height: 58px; border-radius: 50%; background: #111; color: #fff; font-size: 24px; border: none; box-shadow: 0 6px 20px rgba(0,0,0,0.25); z-index: 180; }
     #chat-bubble:hover { background: #333; }
     #chat-panel { position: fixed; bottom: 26px; right: 26px; width: min(380px, calc(100vw - 40px)); height: min(560px, calc(100vh - 100px)); background: #fff; color: #111; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.28); z-index: 190; display: flex; flex-direction: column; overflow: hidden; }
@@ -489,10 +495,16 @@
       <a href="#about" onclick="navigateTo('home-view')">About</a>
     </div>
     
-    <div id="auth-container"></div>
+    <!-- Dynamic Auth Container -->
+    <div id="auth-container">
+    </div>
   </nav>
 
   <main id="app-container">
+    
+    <!-- ============================================== -->
+    <!-- HOME VIEW                                      -->
+    <!-- ============================================== -->
     <div id="home-view" class="hidden">
       <div id="announce-bar" class="hidden"></div>
       <section id="home" class="hero">
@@ -524,37 +536,37 @@
         </div>
 
         <div class="subject-grid">
-          <article class="subject-card featured" onclick="openSubject(0)">
+          <article class="subject-card featured">
             <div class="number">01</div>
             <h3>Structural<br>Engineering</h3>
             <p>Reinforced concrete, steel design, structural analysis, and more.</p>
             <a href="#">Explore <span>↗</span></a>
           </article>
-          <article class="subject-card" onclick="openSubject(1)">
+          <article class="subject-card">
             <div class="number">02</div>
             <h3>Construction<br>Engineering</h3>
             <p>Methods, project management, estimating, and construction practice.</p>
             <a href="#">Explore <span>↗</span></a>
           </article>
-          <article class="subject-card" onclick="openSubject(2)">
+          <article class="subject-card">
             <div class="number">03</div>
             <h3>Geotechnical<br>Engineering</h3>
             <p>Soil mechanics, foundations, earth pressure, and slope stability.</p>
             <a href="#">Explore <span>↗</span></a>
           </article>
-          <article class="subject-card" onclick="openSubject(3)">
+          <article class="subject-card">
             <div class="number">04</div>
             <h3>Hydraulics &<br>Water Resources</h3>
             <p>Fluid mechanics, open channels, pipes, and hydraulic systems.</p>
             <a href="#">Explore <span>↗</span></a>
           </article>
-          <article class="subject-card" onclick="openSubject(4)">
+          <article class="subject-card">
             <div class="number">05</div>
             <h3>Transportation<br>Engineering</h3>
             <p>Highways, traffic engineering, pavement, and transportation systems.</p>
             <a href="#">Explore <span>↗</span></a>
           </article>
-          <article class="subject-card" onclick="openSubject(5)">
+          <article class="subject-card">
             <div class="number">06</div>
             <h3>Mathematics &<br>Surveying</h3>
             <p>Engineering mathematics, surveying principles, and problem solving.</p>
@@ -572,19 +584,19 @@
           <p class="section-note">Choose a subject and refresh the concepts that matter.</p>
         </div>
         <div class="subject-grid">
-          <article class="subject-card featured" onclick="openSubject(6)">
+          <article class="subject-card featured">
             <div class="number">01</div>
             <h3>PSAD</h3>
             <p>Principles of Structural Analysis and Design</p>
             <a href="#">Explore <span>↗</span></a>
           </article>
-          <article class="subject-card" onclick="openSubject(7)">
+          <article class="subject-card">
             <div class="number">02</div>
             <h3>AMSPTHECMM</h3>
             <p>Applied Mathematics, Surveying, Principles of Transportation and Highway Engineering, Construction Management and Methods</p>
             <a href="#">Explore <span>↗</span></a>
           </article>
-          <article class="subject-card" onclick="openSubject(8)">
+          <article class="subject-card">
             <div class="number">03</div>
             <h3>HPGE</h3>
             <p>Hydraulics and Principles of Geotechnical Engineering</p>
@@ -612,9 +624,14 @@
     </div>
 
     <div id="subject-view" class="hidden"></div>
+
     <div id="flashcard-view" class="hidden"></div>
+
     <div id="guest-terms-view" class="hidden"></div>
+
     <div id="scores-view" class="hidden"></div>
+
+
 
     <div id="admin-view" class="hidden" style="padding: 60px 5vw; background: #0f0f10; color: #fff; min-height: 80vh;">
       <div style="max-width: 1100px; margin: auto;">
@@ -628,13 +645,13 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
           <div style="background: #18181b; border: 1px solid #27272a; padding: 25px; border-radius: 6px;">
             <h3 style="font-size: 18px; margin-bottom: 10px;">Question Bank</h3>
-            <p style="color: #888; font-size: 12px; margin-bottom: 20px;">Live civil engineering questions configured across active modules.</p>
-            <span style="font: 500 11px 'DM Mono', monospace; color: #f59e0b;">● Active</span>
+            <p style="color: #888; font-size: 12px; margin-bottom: 20px;">1,420 civil engineering questions configured across 6 modules.</p>
+            <span style="font: 500 11px 'DM Mono', monospace; color: #f59e0b;">● Live & Verified</span>
           </div>
           <div style="background: #18181b; border: 1px solid #27272a; padding: 25px; border-radius: 6px;">
             <h3 style="font-size: 18px; margin-bottom: 10px;">Active Reviewees &amp; Refreshers</h3>
-            <p style="color: #888; font-size: 12px; margin-bottom: 20px;">Enrolled students currently practicing board concepts.</p>
-            <span style="font: 500 11px 'DM Mono', monospace; color: #10b981;">● Online</span>
+            <p style="color: #888; font-size: 12px; margin-bottom: 20px;">842 enrolled reviewees currently practicing board concepts.</p>
+            <span style="font: 500 11px 'DM Mono', monospace; color: #10b981;">● 128 Online Now</span>
           </div>
           <div style="background: #18181b; border: 1px solid #27272a; padding: 25px; border-radius: 6px;">
             <h3 style="font-size: 18px; margin-bottom: 10px;">Role Access Control</h3>
@@ -658,12 +675,13 @@
         </div>
         <div id="lesson-admin">
           <h3 id="la-h">Add a video lecture</h3>
-          <p class="hint">Upload the video or PDF to Google Drive, set sharing to "Anyone with the link", then paste the link here.</p>
+          <p class="hint">Upload the video to Google Drive, set sharing to "Anyone with the link", then paste the link here.</p>
           <label>Subject</label><select id="la-subject"></select>
           <label>Lecture title</label><input id="la-title" placeholder="e.g. Lecture 1: Beam Deflection">
-          <label>Google Drive PDF link (optional)</label>
-          <input id="la-pdf-link" placeholder="https://drive.google.com/file/d/.../view">
-          <p class="hint">Upload the PDF to Google Drive, set access to 'Anyone with link', and paste the link here.</p>
+          <label>Reading material (PDF, optional)</label>
+          <input type="file" id="la-pdf" accept="application/pdf" onchange="handlePdfPick(this)">
+          <p id="la-pdf-name"></p>
+          <p class="hint">Shown above the video. Each student gets their own copy with their email stamped on every page, so it stays watermarked even when printed.</p>
           <label>Google Drive video link (optional if you add a PDF)</label><input id="la-link" placeholder="https://drive.google.com/file/d/.../view">
           <label>Quiz (optional)</label>
           <div id="qb"></div>
@@ -716,7 +734,11 @@
       </div>
     </div>
 
+    <!-- ============================================== -->
+    <!-- LOGIN VIEW                                     -->
+    <!-- ============================================== -->
     <div id="login-view" class="login-view">
+      
       <div class="login-shell">
         <div class="login-brand">
           <div class="login-logo">A</div>
@@ -792,8 +814,7 @@
     const db = getFirestore(app);
 
     window.fb = {
-      auth, db,
-      doc, getDoc, setDoc, deleteDoc, addDoc, updateDoc,
+      auth, db, doc, getDoc, setDoc, deleteDoc, addDoc, updateDoc,
       collection, query, where, orderBy, getDocs, onSnapshot,
       arrayUnion, arrayRemove,
       GoogleAuthProvider, signInWithPopup, signOut
@@ -802,5 +823,970 @@
     onAuthStateChanged(auth, function (user) {
       if (window.handleAuthChange) window.handleAuthChange(user);
     });
+  </script>
+  <script>
+    var currentUser = null;
+    var VIEWS = ['home-view', 'admin-view', 'login-view', 'subject-view', 'flashcard-view', 'guest-terms-view', 'scores-view'];
 
-    // ... (50 KB left)
+    function navigateTo(viewId) {
+      var guestAllowed = viewId === 'guest-terms-view' || viewId === 'flashcard-view';
+      if (!currentUser && !guestAllowed) {
+        viewId = 'login-view';
+      } else if (currentUser && viewId === 'login-view') {
+        viewId = currentUser.role === 'admin' ? 'admin-view' : 'home-view';
+      } else if (viewId === 'admin-view' && (!currentUser || currentUser.role !== 'admin')) {
+        viewId = currentUser ? 'home-view' : 'login-view';
+      }
+      VIEWS.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.classList.toggle('hidden', id !== viewId);
+      });
+      if (viewId === 'guest-terms-view') renderGuestTerms();
+      if (viewId === 'scores-view') renderScoresView();
+      if (viewId === 'admin-view') { renderAdminGrades(); renderRolesList(); }
+      window.scrollTo(0, 0);
+    }
+
+    async function googleSignIn() {
+      var toast = document.getElementById('toast');
+      document.getElementById('no-access-box').classList.add('hidden');
+      toast.textContent = 'Connecting to Google...';
+      toast.style.display = 'block';
+      try {
+        var provider = new window.fb.GoogleAuthProvider();
+        await window.fb.signInWithPopup(window.fb.auth, provider);
+        // handleAuthChange fires automatically once sign-in resolves
+      } catch (e) {
+        toast.style.display = 'none';
+        if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+          alert('Sign-in failed: ' + e.message);
+        }
+      }
+    }
+
+    async function handleAuthChange(user) {
+      var toast = document.getElementById('toast');
+      if (!user) {
+        currentUser = null;
+        toast.style.display = 'none';
+        renderAuth();
+        navigateTo('login-view');
+        return;
+      }
+      toast.textContent = 'Checking your access...';
+      toast.style.display = 'block';
+      try {
+        var snap = await window.fb.getDoc(window.fb.doc(window.fb.db, 'roles', user.email));
+        toast.style.display = 'none';
+        if (!snap.exists()) {
+          document.getElementById('no-access-email').textContent = user.email;
+          document.getElementById('no-access-box').classList.remove('hidden');
+          return;
+        }
+        var access = snap.data().role;
+        if (access === 'both') access = 'full';
+        // "full" = Reviewee + Refresher on one email; role holds the active mode, switchable from the header
+        var mode = access === 'full' ? (load('angle_mode_' + user.email, 'reviewee') === 'refresher' ? 'refresher' : 'reviewee') : access;
+        currentUser = { email: user.email, access: access, role: mode, name: user.displayName || user.email };
+        document.getElementById('no-access-box').classList.add('hidden');
+        renderAuth();
+        navigateTo(currentUser.role === 'admin' ? 'admin-view' : 'home-view');
+        if (!window.lessonsListenerStarted) {
+          window.lessonsListenerStarted = true;
+          startLessonsListener();
+        }
+      } catch (e) {
+        toast.style.display = 'none';
+        alert('Could not verify your account: ' + e.message);
+      }
+    }
+    window.handleAuthChange = handleAuthChange;
+
+    function signOutAndRetry() {
+      document.getElementById('no-access-box').classList.add('hidden');
+      window.fb.signOut(window.fb.auth);
+    }
+
+    function switchMode(mode) {
+      if (!currentUser || currentUser.access !== 'full' || currentUser.role === mode) return;
+      currentUser.role = mode;
+      save('angle_mode_' + currentUser.email, mode);
+      renderAuth();
+      if (chatPanelOpen) renderChat();
+      navigateTo('home-view');
+      var t = document.querySelector(mode === 'refresher' ? '#subjects-refresher' : '#subjects');
+      if (t) t.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function logout() {
+      window.fb.signOut(window.fb.auth);
+    }
+
+    function renderAuth() {
+      var box = document.getElementById('auth-container');
+      var heroBtn = document.getElementById('hero-login-btn');
+      var r = currentUser ? currentUser.role : null;
+      renderAnnouncements();
+      renderFlashSection();
+      document.getElementById('subjects').classList.toggle('hidden', r === 'refresher');
+      document.getElementById('subjects-refresher').classList.toggle('hidden', !(r === 'refresher' || r === 'admin'));
+      document.getElementById('subjects-flashcards').classList.toggle('hidden', !currentUser);
+      var target = r === 'refresher' ? '#subjects-refresher' : '#subjects';
+      document.getElementById('nav-subjects').setAttribute('href', target);
+      document.getElementById('hero-explore').setAttribute('href', target);
+      var links = document.getElementById('nav-links');
+      if (!currentUser) {
+        box.innerHTML = '';
+        links.classList.add('hidden');
+        if (heroBtn) heroBtn.classList.remove('hidden');
+        closeChatPanel();
+        document.getElementById('chat-bubble').classList.add('hidden');
+        return;
+      }
+      links.classList.remove('hidden');
+      document.getElementById('chat-bubble').classList.toggle('hidden', chatPanelOpen);
+      var name = currentUser.name || currentUser.email.split('@')[0];
+      box.innerHTML =
+        '<div class="user-profile">' +
+        (currentUser.access === 'full'
+          ? '<div class="mode-switch">' + [['reviewee', 'Review'], ['refresher', 'Refresher']].map(function (m) {
+              return '<button type="button" class="' + (m[0] === currentUser.role ? 'on' : '') + '" onclick="switchMode(\'' + m[0] + '\')">' + m[1] + '</button>';
+            }).join('') + '</div>'
+          : '<span class="role-badge ' + currentUser.role + '">' + roleLabel(currentUser.role) + '</span>') +
+        '<div class="user-avatar">' + name.charAt(0).toUpperCase() + '</div>' +
+        '<span>' + name + '</span>' +
+        (currentUser.role === 'admin' ? '<button class="login-btn" onclick="navigateTo(\'admin-view\')">Console</button>' : '') +
+        '<button class="login-btn" onclick="logout()">Log out</button>' +
+        '</div>';
+      if (heroBtn) heroBtn.classList.add('hidden');
+    }
+
+    // ---------- Lectures & quizzes ----------
+    var SUBJECTS = ['Structural Engineering','Construction Engineering','Geotechnical Engineering','Hydraulics & Water Resources','Transportation Engineering','Mathematics & Surveying','PSAD','AMSPTHECMM','HPGE'];
+    var SUBJECT_SUB = { 6: 'Principles of Structural Analysis and Design', 7: 'Applied Mathematics, Surveying, Principles of Transportation and Highway Engineering, Construction Management and Methods', 8: 'Hydraulics and Principles of Geotechnical Engineering' };
+    // subjects 0-5 = Reviewee, 6-8 = Refresher (admin sees all)
+    function load(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } }
+    function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    var lessons = [], progress = load('angle_progress', {}), curSubject = 0, curLesson = null;
+    function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+    function roleLabel(r) { return r; }
+    function driveId(u) { var m = u.match(/\/d\/([\w-]+)/) || u.match(/[?&]id=([\w-]+)/); return m ? m[1] : null; }
+    function parseQuiz(t) {
+      return t.trim().split(/\n\s*\n/).map(function (b) {
+        var ls = b.trim().split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+        var q = ls.shift(), a = -1;
+        var o = ls.map(function (l, i) { if (l[0] === '*') { a = i; l = l.slice(1).trim(); } return l.replace(/^[A-Da-d][).]\s*/, ''); });
+        return { q: q, opts: o, a: a };
+      }).filter(function (x) { return x.q && x.opts.length > 1 && x.a >= 0; });
+    }
+
+    function progressTag(p) { return '<em style="color:' + (p >= 70 ? '#16a34a' : '#dc2626') + '">' + (p >= 70 ? '✓ ' : '') + p + '%</em>'; }
+    function openSubject(i) {
+      var role = currentUser && currentUser.role;
+      if (role !== 'admin' && (role === 'refresher') !== (i >= 6)) return;
+      curSubject = i; curLesson = null; renderSubject(); navigateTo('subject-view'); }
+    function pickLesson(id) { curLesson = id; renderSubject(); }
+
+    function renderSubject() {
+      var list = lessons.filter(function (l) { return l.subject === curSubject; });
+      var h = '<button class="sv-back" onclick="navigateTo(\'home-view\')">← All subjects</button><p class="eyebrow">' + (curSubject < 6 ? 'SUBJECT 0' + (curSubject + 1) : 'REFRESHER 0' + (curSubject - 5)) + '</p><h2>' + esc(SUBJECTS[curSubject]) + '</h2>' + (SUBJECT_SUB[curSubject] ? '<p class="sv-sub">' + esc(SUBJECT_SUB[curSubject]) + '</p>' : '') +
+        (currentUser && currentUser.role === 'admin' ? '<p style="margin:-15px 0 25px"><button type="button" class="text-btn" onclick="goAddLesson()">+ Add a lecture to this subject</button></p>' : '');
+      if (!list.length) {
+        h += '<p class="sv-empty">No lectures yet. Check back soon.</p>';
+      } else {
+        if (!curLesson || !list.some(function (l) { return l.id === curLesson; })) curLesson = list[0].id;
+        h += '<div class="sv-layout"><ol class="sv-list">' + list.map(function (l, i) {
+          return '<li class="' + (l.id === curLesson ? 'on' : '') + '" onclick="pickLesson(\'' + l.id + '\')"><span>' + (i + 1) + '</span>' + esc(l.title) + (progress[l.id] != null ? progressTag(progress[l.id]) : '') + '</li>';
+        }).join('') + '</ol><div id="sv-main"></div></div>';
+      }
+      document.getElementById('subject-view').innerHTML = h;
+      if (list.length) renderLesson();
+    }
+
+    function renderLesson() {
+      var l = lessons.find(function (x) { return x.id === curLesson; });
+      var sib = lessons.filter(function (x) { return x.subject === l.subject; }), k = sib.indexOf(l);
+      var nav = '<div class="sv-nav">' + (k > 0 ? '<button type="button" class="text-btn" onclick="pickLesson(\'' + sib[k - 1].id + '\')">← Previous</button>' : '<span></span>') +
+        (l.video ? '<button type="button" class="text-btn" onclick="goFull()">⛶ Fullscreen</button>' : '<span></span>') +
+        (k < sib.length - 1 ? '<button type="button" class="text-btn" onclick="pickLesson(\'' + sib[k + 1].id + '\')">Next →</button>' : '<span></span>') + '</div>';
+      var h = (l.pdf ? '<div class="pdf-block"><div class="pdf-ico">📄</div><div style="flex:1"><div class="pdf-name">' + esc(l.pdf.name) + '</div><div class="pdf-hint">Opens a personal, watermarked copy in this site</div></div><button type="button" class="primary-btn" onclick="openWatermarkedPdf(\'' + l.id + '\')">Open PDF</button></div>' : '') +
+        (l.video ? '<div class="sv-video" id="sv-video"><iframe src="https://drive.google.com/file/d/' + l.video + '/preview" allow="autoplay"></iframe>' + watermarkHtml() + '<div class="sv-block"></div></div>' : '') +
+        '<h3>' + esc(l.title) + '</h3>' + nav;
+      if (l.quiz.length) {
+        h += '<div class="quiz"><h4>Quick quiz</h4>' + l.quiz.map(function (q, i) {
+          return '<div class="q" data-i="' + i + '"><p>' + (i + 1) + '. ' + esc(q.q) + '</p>' + q.opts.map(function (o, j) {
+            return '<button type="button" class="opt" data-j="' + j + '" onclick="pickOpt(this)">' + esc(o) + '</button>';
+          }).join('') + '</div>';
+        }).join('') + '<button type="button" class="primary-btn" onclick="checkQuiz()">Submit</button><p id="quiz-result"></p></div>';
+      }
+      document.getElementById('sv-main').innerHTML = h;
+      startWatermark();
+    }
+
+    // ---------- Watermark ----------
+    var wmTimer = null;
+    function watermarkHtml() {
+      var t = esc(currentUser ? currentUser.email : '') + ' · ' + fmtDate(new Date()), tiles = '';
+      for (var i = 0; i < 40; i++) tiles += '<span>' + t + '</span>';
+      return '<div class="wm" id="wm">' + tiles + '</div><div class="wm-move" id="wm-move">' + t + '</div>';
+    }
+    function goFull() { var v = document.getElementById('sv-video'); if (v && v.requestFullscreen) v.requestFullscreen(); }
+    function startWatermark() {
+      clearInterval(wmTimer);
+      if (!document.getElementById('sv-video')) return;
+      wmTimer = setInterval(function () {
+        var box = document.getElementById('sv-video');
+        if (!box) { clearInterval(wmTimer); return; }
+        var wm = document.getElementById('wm'), mv = document.getElementById('wm-move');
+        var bad = !wm || !mv || [wm, mv].some(function (e) {
+          var c = getComputedStyle(e);
+          return c.display === 'none' || c.visibility === 'hidden' || parseFloat(c.opacity) < 0.15 || e.offsetWidth === 0;
+        });
+        if (bad) { box.innerHTML = '<div class="wm-stop">Video paused. Please reload the page.</div>'; clearInterval(wmTimer); return; }
+        mv.style.top = (10 + Math.random() * 70) + '%';
+        mv.style.left = (5 + Math.random() * 55) + '%';
+      }, 4000);
+    }
+
+    function pickOpt(b) {
+      b.parentNode.querySelectorAll('.opt').forEach(function (o) { o.classList.remove('sel'); });
+      b.classList.add('sel');
+    }
+
+    function checkQuiz() {
+      var l = lessons.find(function (x) { return x.id === curLesson; }), right = 0;
+      document.querySelectorAll('#sv-main .q').forEach(function (d) {
+        var q = l.quiz[+d.dataset.i];
+        d.querySelectorAll('.opt').forEach(function (o) {
+          var j = +o.dataset.j, sel = o.classList.contains('sel');
+          o.disabled = true;
+          if (sel) o.classList.add(j === q.a ? 'ok' : 'bad');
+          if (sel && j === q.a) right++;
+        });
+      });
+      var pct = Math.round(right / l.quiz.length * 100);
+      progress[l.id] = pct; save('angle_progress', progress);
+      logScore('Lecture Quiz', l.title, pct);
+      var pass = pct >= 70;
+      document.getElementById('quiz-result').innerHTML =
+        '<div class="qr ' + (pass ? 'pass' : 'fail') + '"><div class="qr-pct">' + pct + '%</div><div>' + right + ' of ' + l.quiz.length + ' correct<br>' +
+        (pass ? 'Passed — great job!' : 'Below 70% — review the lecture and try again.') + '</div>' +
+        '<button type="button" class="text-btn" onclick="renderLesson()">Try again</button></div>';
+      var li = document.querySelector('.sv-list li.on');
+      if (li) { var old = li.querySelector('em'); if (old) old.remove(); li.insertAdjacentHTML('beforeend', progressTag(pct)); }
+      document.getElementById('quiz-result').scrollIntoView({ block: 'nearest' });
+    }
+
+    // ---------- Announcements (live via Firestore) ----------
+    var announcements = [];
+    function startAnnouncementsListener() {
+      var q = window.fb.query(window.fb.collection(window.fb.db, 'announcements'), window.fb.orderBy('date', 'desc'));
+      window.fb.onSnapshot(q, function (snap) {
+        announcements = [];
+        snap.forEach(function (d) { announcements.push(Object.assign({ id: d.id }, d.data())); });
+        renderAnnouncements();
+      }, function (err) { console.error('Announcements listener error:', err); });
+    }
+    function fmtDate(d) { return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); }
+
+    // ---------- Score history (shared by lecture quizzes & Terms quizzes, via Firestore) ----------
+    async function logScore(type, title, pct) {
+      if (!currentUser) return;
+      try {
+        await window.fb.addDoc(window.fb.collection(window.fb.db, 'scores'), {
+          email: currentUser.email, role: currentUser.role, type: type, title: title, score: pct, date: new Date().toISOString()
+        });
+      } catch (e) { console.error('Could not save score:', e); }
+    }
+    async function renderScoresView() {
+      var v = document.getElementById('scores-view');
+      if (!currentUser) return;
+      v.innerHTML = '<div class="fc-wrap"><p class="sv-empty">Loading your scores…</p></div>';
+      var log = [];
+      try {
+        var q = window.fb.query(window.fb.collection(window.fb.db, 'scores'), window.fb.where('email', '==', currentUser.email));
+        var snap = await window.fb.getDocs(q);
+        snap.forEach(function (d) { log.push(d.data()); });
+        log.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+      } catch (e) {
+        v.innerHTML = '<div class="fc-wrap"><p class="sv-empty" style="color:#dc2626">Could not load your scores: ' + esc(e.message) + '</p></div>';
+        return;
+      }
+      var h = '<button class="sv-back" onclick="navigateTo(\'home-view\')">← Back home</button><p class="eyebrow">MY SCORES</p><h2>Your progress</h2>';
+      if (!log.length) {
+        h += '<p class="sv-empty">No quiz attempts yet — take a lecture quiz or a Terms set to see your scores here.</p>';
+      } else {
+        var avg = Math.round(log.reduce(function (s, e) { return s + e.score; }, 0) / log.length);
+        var best = Math.max.apply(null, log.map(function (e) { return e.score; }));
+        var passed = log.filter(function (e) { return e.score >= 70; }).length;
+        h += '<div class="stat-row">' +
+          '<div class="stat-card"><div class="lbl">Attempts</div><div class="val">' + log.length + '</div></div>' +
+          '<div class="stat-card"><div class="lbl">Average</div><div class="val">' + avg + '%</div></div>' +
+          '<div class="stat-card"><div class="lbl">Best score</div><div class="val">' + best + '%</div></div>' +
+          '<div class="stat-card"><div class="lbl">Passed (70%+)</div><div class="val">' + passed + '/' + log.length + '</div></div>' +
+          '</div><div class="term-list">' + log.map(function (e) {
+            var pass = e.score >= 70, tagClass = e.type === 'Lecture Quiz' ? 'lecture' : 'terms';
+            return '<article class="term-card" style="cursor:default"><div class="term-main"><h4>' + esc(e.title) + ' <span class="term-tag ' + tagClass + '">' + esc(e.type) + '</span></h4><p>' + fmtDate(e.date) + '</p></div>' +
+              '<div class="term-side"><span style="font-weight:800;font-size:18px;color:' + (pass ? '#16a34a' : '#dc2626') + '">' + e.score + '%</span></div></article>';
+          }).join('') + '</div>';
+      }
+      v.innerHTML = '<div class="fc-wrap">' + h + '</div>';
+    }
+    function annTitle(a) { return a.title || (a.text.length > 40 ? a.text.slice(0, 40) + '…' : a.text); }
+    var AUD = { reviewee: 'Reviewees', refresher: 'Refreshers', both: 'Everyone' };
+    function isAdmin() { return currentUser && currentUser.role === 'admin'; }
+    function visibleAnns() {
+      var r = currentUser && currentUser.role;
+      return announcements.filter(function (a) { var au = a.audience || 'both'; return r === 'admin' || au === 'both' || au === r; });
+    }
+    function annRow(a, n) { return '<button type="button" class="ann-item" onclick="openAnnouncement(\'' + a.id + '\')"><span>' + fmtDate(a.date) + '</span><b>' + esc(annTitle(a)) + '</b>' + (isAdmin() ? '<i class="ann-tag">' + AUD[a.audience || 'both'] + '</i>' : '') + '</button>'; }
+
+    function renderAnnouncements() {
+      var bar = document.getElementById('announce-bar');
+      var vis = visibleAnns();
+      if (!vis.length) { bar.classList.add('hidden'); bar.innerHTML = ''; }
+      else {
+        bar.classList.remove('hidden');
+        bar.innerHTML = '<button type="button" class="ann-head" onclick="openAnnList()">📢 ANNOUNCEMENTS (' + vis.length + ') — VIEW ALL →</button>' + vis.slice(0, 3).map(annRow).join('');
+      }
+      document.getElementById('an-list').innerHTML = announcements.map(function (a) {
+        return '<div class="la-row"><span>' + fmtDate(a.date) + ' — ' + esc(annTitle(a)) + ' <i class="ann-tag">' + AUD[a.audience || 'both'] + '</i></span><button onclick="deleteAnnouncement(\'' + a.id + '\')">Delete</button></div>';
+      }).join('');
+    }
+
+    function showDrawer(html) {
+      var d = document.getElementById('drawer');
+      d.innerHTML = html; d.scrollTop = 0;
+      document.getElementById('drawer-overlay').classList.remove('hidden');
+      d.classList.add('open'); d.setAttribute('aria-hidden', 'false');
+    }
+    function closeDrawer() {
+      document.getElementById('drawer').classList.remove('open');
+      document.getElementById('drawer').setAttribute('aria-hidden', 'true');
+      document.getElementById('drawer-overlay').classList.add('hidden');
+    }
+    function openAnnList() {
+      showDrawer('<div class="dr-top"><b>All announcements</b><button onclick="closeDrawer()">✕ CLOSE</button></div>' +
+        visibleAnns().map(annRow).join(''));
+    }
+    function openAnnouncement(id) {
+      var a = announcements.find(function (x) { return x.id === id; });
+      if (!a) return;
+      showDrawer('<div class="dr-top"><button onclick="openAnnList()">← ALL ANNOUNCEMENTS</button><button onclick="closeDrawer()">✕ CLOSE</button></div>' +
+        '<h2>' + esc(annTitle(a)) + '</h2><p class="dr-date">Posted ' + fmtDate(a.date) + '</p><div class="dr-body">' + esc(a.text) + '</div>');
+    }
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePdfDrawer(); });
+    document.addEventListener('click', function (e) {
+      if (openPicker && !e.target.closest('.cm-picker') && !e.target.closest('.dm-add')) {
+        openPicker = null;
+        renderChat();
+      }
+    });
+
+    async function postAnnouncement() {
+      var title = document.getElementById('an-title').value.trim(), t = document.getElementById('an-text').value.trim();
+      var msg = document.getElementById('an-msg');
+      if (!title || !t) { msg.textContent = 'Please fill in both the title and the announcement.'; return; }
+      msg.textContent = 'Posting…';
+      try {
+        await window.fb.addDoc(window.fb.collection(window.fb.db, 'announcements'), {
+          audience: document.getElementById('an-aud').value, title: title, text: t, date: new Date().toISOString()
+        });
+        document.getElementById('an-title').value = ''; document.getElementById('an-text').value = '';
+        msg.textContent = '';
+      } catch (e) { msg.textContent = 'Could not post: ' + e.message; }
+    }
+    async function deleteAnnouncement(id) {
+      try { await window.fb.deleteDoc(window.fb.doc(window.fb.db, 'announcements', id)); }
+      catch (e) { alert('Could not delete: ' + e.message); }
+    }
+
+    // ---------- PDF watermarking ----------
+    var pickedPdf = null;
+    function handlePdfPick(inp) {
+      var f = inp.files[0], note = document.getElementById('la-pdf-name');
+      if (!f) { pickedPdf = null; note.textContent = ''; return; }
+      if (f.size > 650 * 1024) { note.style.color = '#f87171'; note.textContent = 'That file is over 650KB — too big to store alongside the lecture. Try compressing it.'; inp.value = ''; pickedPdf = null; return; }
+      var r = new FileReader();
+      r.onload = function () { pickedPdf = { name: f.name, data: r.result }; note.style.color = '#34d399'; note.textContent = 'Ready: ' + f.name; };
+      r.readAsDataURL(f);
+    }
+    async function openWatermarkedPdf(lessonId) {
+      var l = lessons.find(function (x) { return x.id === lessonId; });
+      if (!l.pdf || !window.PDFLib) { alert('This PDF watermarker needs an internet connection to load once.'); return; }
+      try {
+        var bytes = Uint8Array.from(atob(l.pdf.data.split(',')[1]), function (c) { return c.charCodeAt(0); });
+        var doc = await PDFLib.PDFDocument.load(bytes);
+        var font = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+        var stamp = (currentUser ? currentUser.email : 'unknown') + '  ·  ' + new Date().toLocaleString();
+        doc.getPages().forEach(function (page) {
+          var w = page.getWidth(), h = page.getHeight();
+          for (var y = 40; y < h; y += 130) {
+            for (var x = -40; x < w; x += 240) {
+              page.drawText(stamp, { x: x, y: y, size: 10, font: font, color: PDFLib.rgb(0.75, 0.1, 0.1), opacity: 0.28, rotate: PDFLib.degrees(35) });
+            }
+          }
+          page.drawText(stamp, { x: 20, y: 14, size: 8, font: font, color: PDFLib.rgb(0.4, 0.4, 0.4) });
+        });
+        var out = await doc.save();
+        var blob = new Blob([out], { type: 'application/pdf' });
+        var url = URL.createObjectURL(blob);
+      await showPdfDrawer(l.pdf.name, url);
+      } catch (e) { alert('Could not open the PDF: ' + e.message); }
+    }
+
+    async function showPdfDrawer(name, blobUrl) {
+      var d = document.getElementById('drawer');
+      d.classList.add('wide');
+      d.innerHTML = '<div class="dr-top"><b>Reading material</b><button onclick="closePdfDrawer()">✕ CLOSE</button></div>' +
+        '<div class="pdf-toolbar"><span class="name">📄 ' + esc(name) + '</span><a class="text-btn" href="' + blobUrl + '" target="_blank" rel="noopener">Print / Save a copy ↗</a></div>' +
+        '<div class="pdf-pages" id="pdf-pages"><div class="pdf-loading">Loading pages…</div></div>';
+      document.getElementById('drawer-overlay').classList.remove('hidden');
+      d.classList.add('open'); d.setAttribute('aria-hidden', 'false');
+      var box = document.getElementById('pdf-pages');
+      function fallback() {
+        box.innerHTML = '<div class="pdf-loading">This viewer is taking too long to load here.<br><br><a class="text-btn" href="' + blobUrl + '" target="_blank" rel="noopener">Open the PDF in a new tab instead ↗</a></div>';
+      }
+      try {
+        if (!window.pdfjsLib) { fallback(); return; }
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        var timedOut = false;
+        var timer = setTimeout(function () { timedOut = true; fallback(); }, 7000);
+        var task = pdfjsLib.getDocument(blobUrl), pdf = await task.promise;
+        if (timedOut) return;
+        clearTimeout(timer);
+        box.innerHTML = '';
+        for (var n = 1; n <= pdf.numPages; n++) {
+          if (!document.getElementById('pdf-pages')) return; // drawer closed mid-render
+          var page = await pdf.getPage(n);
+          var vp = page.getViewport({ scale: 1.4 });
+          var canvas = document.createElement('canvas');
+          canvas.width = vp.width; canvas.height = vp.height;
+          box.appendChild(canvas);
+          await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+        }
+      } catch (e) { fallback(); }
+    }
+    function closePdfDrawer() { document.getElementById('drawer').classList.remove('wide'); closeDrawer(); }
+
+    // ---------- Community chat (demo — this browser only) ----------
+    var EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+    var chatRoom = 'reviewee';
+    var openPicker = null;
+    var chatPanelOpen = false;
+    function chatKey(room) { return 'angle_chat_' + room; }
+    function loadChat(room) { return load(chatKey(room), []); }
+    function saveChat(room, msgs) { save(chatKey(room), msgs); }
+
+    function toggleChatPanel() { chatPanelOpen ? closeChatPanel() : openChatPanel(); }
+    function openChatPanel() {
+      if (!currentUser) return;
+      chatPanelOpen = true;
+      document.getElementById('chat-bubble').classList.add('hidden');
+      document.getElementById('chat-panel').classList.remove('hidden');
+      renderChat();
+      setTimeout(function () { var i = document.getElementById('chat-input'); if (i) i.focus(); }, 0);
+    }
+    function closeChatPanel() {
+      chatPanelOpen = false;
+      document.getElementById('chat-panel').classList.add('hidden');
+      var role = currentUser ? currentUser.role : null;
+      if (role) document.getElementById('chat-bubble').classList.remove('hidden');
+    }
+    function openChat(room) { chatRoom = room; openPicker = null; renderChat(); }
+
+    function renderChat() {
+      if (!chatPanelOpen) return;
+      var role = currentUser ? currentUser.role : null;
+      if (role !== 'admin') chatRoom = role === 'refresher' ? 'refresher' : 'reviewee';
+      var msgs = loadChat(chatRoom);
+      var tabs = role === 'admin'
+        ? '<div class="cp-tabs">' + ['reviewee', 'refresher'].map(function (r) {
+            return '<button type="button" class="' + (r === chatRoom ? 'on' : '') + '" onclick="openChat(\'' + r + '\')">' + (r === 'reviewee' ? 'Reviewee' : 'Refresher') + '</button>';
+          }).join('') + '</div>' : '';
+      var h = '<div class="cp-head"><b>' +
+        (role === 'admin' ? (chatRoom === 'reviewee' ? 'Reviewee' : 'Refresher') : (role === 'refresher' ? 'Refresher' : 'Reviewee')) +
+        ' chat</b><button type="button" onclick="closeChatPanel()">✕ Close</button></div>' + tabs +
+        '<p class="cp-note">Demo mode — messages stay in this browser only.</p>' +
+        '<div class="chat-box" style="flex:1;border:0;border-radius:0"><div class="chat-msgs" id="chat-msgs">' +
+        (msgs.length ? msgs.map(renderMsg).join('') : '<p class="chat-empty">No messages yet — say hello 👋</p>') +
+        '</div><div class="chat-input"><input id="chat-input" placeholder="Write a message…" onkeydown="if(event.key===\'Enter\')sendChat()"><button type="button" class="primary-btn" onclick="sendChat()">Send</button></div></div>';
+      document.getElementById('chat-panel').innerHTML = h;
+      var box = document.getElementById('chat-msgs');
+      box.scrollTop = box.scrollHeight;
+    }
+
+    var AVATAR_COLORS = ['#f87171', '#fb923c', '#facc15', '#4ade80', '#2dd4bf', '#38bdf8', '#818cf8', '#c084fc', '#f472b6'];
+    function avatarColor(email) {
+      var h = 0;
+      for (var i = 0; i < email.length; i++) h = (h * 31 + email.charCodeAt(i)) >>> 0;
+      return AVATAR_COLORS[h % AVATAR_COLORS.length];
+    }
+    function renderMsg(m) {
+      var reacts = Object.keys(m.reactions || {}).filter(function (e) { return m.reactions[e] > 0; });
+      return '<div class="dm"><div class="dm-avatar" style="background:' + avatarColor(m.name) + '">' + esc(m.name.charAt(0).toUpperCase()) + '</div>' +
+        '<div class="dm-body"><div class="dm-head"><b>' + esc(m.name.split('@')[0]) + '</b><span class="cm-role ' + m.role + '">' + roleLabel(m.role) + '</span><span class="dm-time">' + fmtTime(m.time) + '</span></div>' +
+        '<div class="dm-text">' + esc(m.text) +
+        '<button type="button" class="dm-add" onclick="togglePicker(\'' + m.id + '\')" aria-label="Add reaction">+</button>' +
+        (openPicker === m.id ? '<div class="cm-picker">' + EMOJIS.map(function (e) { return '<button type="button" onclick="react(\'' + m.id + '\',\'' + e + '\')">' + e + '</button>'; }).join('') + '</div>' : '') +
+        '</div>' +
+        (reacts.length ? '<div class="cm-reactions">' + reacts.map(function (e) {
+          return '<button type="button" class="' + ((m.myReacts || []).indexOf(e) > -1 ? 'mine' : '') + '" onclick="react(\'' + m.id + '\',\'' + e + '\')">' + e + ' ' + m.reactions[e] + '</button>';
+        }).join('') + '</div>' : '') + '</div></div>';
+    }
+
+    function fmtTime(iso) { return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); }
+
+    function sendChat() {
+      var inp = document.getElementById('chat-input'), text = inp.value.trim();
+      if (!text || !currentUser) return;
+      var msgs = loadChat(chatRoom);
+      msgs.push({ id: 'm' + Date.now(), name: currentUser.email, role: currentUser.role, text: text, time: new Date().toISOString(), reactions: {}, myReacts: [] });
+      saveChat(chatRoom, msgs);
+      inp.value = '';
+      renderChat();
+    }
+
+    function togglePicker(id) { openPicker = openPicker === id ? null : id; renderChat(); }
+
+    function react(id, emoji) {
+      var msgs = loadChat(chatRoom);
+      var m = msgs.find(function (x) { return x.id === id; });
+      if (!m) return;
+      m.reactions = m.reactions || {}; m.myReacts = m.myReacts || [];
+      var i = m.myReacts.indexOf(emoji);
+      if (i > -1) { m.myReacts.splice(i, 1); m.reactions[emoji] = Math.max(0, (m.reactions[emoji] || 1) - 1); }
+      else { m.myReacts.push(emoji); m.reactions[emoji] = (m.reactions[emoji] || 0) + 1; }
+      openPicker = null;
+      saveChat(chatRoom, msgs);
+      renderChat();
+    }
+
+    // ---------- Flashcards (separate from lecture uploads) ----------
+    var flashSets = [];
+    function startFlashListener() {
+      window.fb.onSnapshot(window.fb.collection(window.fb.db, 'flashSets'), function (snap) {
+        flashSets = [];
+        snap.forEach(function (d) {
+          var s = d.data();
+          var cards = (s.cards || []).filter(function (c) {
+            return c && typeof c.term === 'string' && Array.isArray(c.options) && c.options.length >= 2 &&
+              typeof c.correct === 'number' && typeof c.options[c.correct] === 'string';
+          });
+          flashSets.push(Object.assign({ premium: false }, s, { id: d.id, cards: cards }));
+        });
+        renderFlashSection();
+        renderFlashAdminList();
+        if (!document.getElementById('guest-terms-view').classList.contains('hidden')) renderGuestTerms();
+      }, function (err) { console.error('Terms listener error:', err); });
+    }
+    function hasPremiumAccess() { return !!currentUser; } // any logged-in Reviewee/Refresher/Admin
+
+    function termCardHtml(s, i, locked) {
+      var tag = s.premium ? '<span class="term-tag premium">🔒 Premium</span>' : '<span class="term-tag free">Free</span>';
+      var count = s.cards.length + ' term' + (s.cards.length === 1 ? '' : 's');
+      var side = locked
+        ? '<button type="button" class="term-lock-btn" onclick="event.stopPropagation();navigateTo(\'login-view\')">Log in to unlock</button>'
+        : '<span style="font-size:18px;color:#bbb">↗</span>';
+      return '<article class="term-card' + (locked ? ' locked' : '') + '"' + (locked ? '' : ' onclick="openFlashSet(\'' + s.id + '\')"') + '>' +
+        '<div class="term-main"><h4>' + esc(s.title) + ' ' + tag + '</h4><p>' + esc(s.desc || '') + '</p><p class="fc-set-count">' + count + '</p></div>' +
+        '<div class="term-side">' + side + '</div></article>';
+    }
+
+    // Terms section on a logged-in member's home page: full access to everything
+    function renderFlashSection() {
+      var grid = document.getElementById('flash-grid');
+      if (!grid) return;
+      var note = '<div class="fc-access">✓ You have full access to every Terms set, including Premium.</div>';
+      if (!flashSets.length) { grid.innerHTML = '<p class="fc-empty">No sets yet — check back soon.</p>'; return; }
+      grid.innerHTML = note + flashSets.map(function (s, i) { return termCardHtml(s, i, false); }).join('');
+    }
+
+    // Public page: guests can browse without logging in
+    function browseGuestTerms() { navigateTo('guest-terms-view'); }
+    function renderGuestTerms() {
+      var v = document.getElementById('guest-terms-view');
+      var free = flashSets.filter(function (s) { return !s.premium; });
+      var premium = flashSets.filter(function (s) { return s.premium; });
+      var h = '<div class="guest-top"><div class="brand" style="position:static"><span>ANGLE</span><small>REVIEW</small></div>' +
+        '<button type="button" style="border:1px solid #111;background:#111;color:#fff;padding:11px 18px;border-radius:100px;font-size:12px;font-weight:600" onclick="navigateTo(\'login-view\')">Log in</button></div>' +
+        '<p class="eyebrow">TERMS</p><h2 style="font-size:40px">Free for everyone.</h2>' +
+        '<p class="sv-sub" style="margin-top:-10px">No account needed for these. Log in as a Reviewee or Refresher to unlock Premium sets too.</p>' +
+        '<article class="fc-cta"><div><h3>Enroll for Premium Terms</h3><p>Reviewees and Refreshers get every Premium set included.</p></div><a class="primary-btn" href="https://fb.com/anglereview" target="_blank" rel="noopener">Enroll now ↗</a></article>';
+      h += '<p class="guest-sub-h">FREE SETS</p><div class="term-list">' +
+        (free.length ? free.map(function (s, i) { return termCardHtml(s, i, false); }).join('') : '<p class="fc-empty">No free sets yet — check back soon.</p>') + '</div>';
+      if (premium.length) {
+        h += '<p class="guest-sub-h">PREMIUM SETS</p><div class="term-list">' + premium.map(function (s, i) { return termCardHtml(s, i, true); }).join('') + '</div>';
+      }
+      v.innerHTML = h;
+    }
+
+    function shuffleArr(arr) {
+      var a = arr.slice();
+      for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+      return a;
+    }
+    function buildTermQuestions(s, count) {
+      var pool = shuffleArr(s.cards);
+      if (count && count < pool.length) pool = pool.slice(0, count);
+      return pool.map(function (card) {
+        return { term: card.term, correct: card.options[card.correct], options: shuffleArr(card.options) };
+      });
+    }
+
+    var curFlashSet = null, flashStage = 'setup', curTermQuestions = [], curQIdx = 0, curTermScore = 0, curTermAnswered = null, flashReturnView = 'home-view', curTermLogged = false;
+    function openFlashSet(id) {
+      var s = flashSets.find(function (x) { return x.id === id; });
+      if (!s) return;
+      if (s.premium && !hasPremiumAccess()) { navigateTo('login-view'); return; }
+      curFlashSet = id; flashStage = 'setup';
+      flashReturnView = currentUser ? 'home-view' : 'guest-terms-view';
+      renderFlashcardView();
+      navigateTo('flashcard-view');
+    }
+    function startFlashQuiz() {
+      var s = flashSets.find(function (x) { return x.id === curFlashSet; });
+      var total = s.cards.length;
+      var input = document.getElementById('fc-qcount');
+      var n = input ? parseInt(input.value, 10) : total;
+      if (!n || n < 1) n = 1;
+      if (n > total) n = total;
+      curTermQuestions = buildTermQuestions(s, n);
+      curQIdx = 0; curTermScore = 0; curTermAnswered = null; curTermLogged = false;
+      flashStage = 'quiz';
+      renderFlashcardView();
+    }
+    function retakeTerms() { flashStage = 'setup'; renderFlashcardView(); }
+    function chooseTermAnswer(i) {
+      if (curTermAnswered !== null) return;
+      curTermAnswered = i;
+      var q = curTermQuestions[curQIdx];
+      if (q.options[i] === q.correct) curTermScore++;
+      renderFlashcardView();
+    }
+    function nextTermQuestion() { curQIdx++; curTermAnswered = null; renderFlashcardView(); }
+
+    function renderFlashcardView() {
+      var s = flashSets.find(function (x) { return x.id === curFlashSet; });
+      var v = document.getElementById('flashcard-view');
+      var head = '<button class="sv-back" onclick="navigateTo(\'' + flashReturnView + '\')">← All terms</button><p class="eyebrow">TERMS' + (s && s.premium ? ' · PREMIUM' : '') + '</p><h2>' + esc(s ? s.title : '') + '</h2>' + (s && s.desc ? '<p class="sv-sub">' + esc(s.desc) + '</p>' : '');
+      if (!s || !s.cards.length) {
+        v.innerHTML = '<div class="fc-wrap">' + head + '<p class="sv-empty">This set has no terms yet.</p></div>';
+        return;
+      }
+      var total = s.cards.length;
+      if (flashStage === 'setup') {
+        v.innerHTML = '<div class="fc-wrap">' + head +
+          '<div class="fc-setup"><label>Number of questions</label>' +
+          '<input type="number" id="fc-qcount" min="1" max="' + total + '" value="' + total + '">' +
+          '<p class="fc-hint">This set has ' + total + ' term' + (total === 1 ? '' : 's') + ' available.</p>' +
+          '<button type="button" class="primary-btn" onclick="startFlashQuiz()">Start quiz</button></div></div>';
+        return;
+      }
+      var qtotal = curTermQuestions.length;
+      if (curQIdx >= qtotal) {
+        var pct = Math.round(curTermScore / qtotal * 100), pass = pct >= 70;
+        if (!curTermLogged) { logScore('Terms Quiz', s.title, pct); curTermLogged = true; }
+        v.innerHTML = '<div class="fc-wrap">' + head +
+          '<div class="qr ' + (pass ? 'pass' : 'fail') + '" style="margin-top:24px"><div class="qr-pct">' + pct + '%</div><div>' + curTermScore + ' of ' + qtotal + ' correct<br>' +
+          (pass ? 'Nice recall!' : 'Review the terms and try again.') + '</div><button type="button" class="text-btn" onclick="retakeTerms()">Retake</button></div></div>';
+        return;
+      }
+      var q = curTermQuestions[curQIdx];
+      v.innerHTML = '<div class="fc-wrap">' + head +
+        '<p class="fc-progress">Term ' + (curQIdx + 1) + ' of ' + qtotal + '</p>' +
+        '<div class="quiz"><div class="q"><p>' + esc(q.term) + '</p>' + q.options.map(function (o, i) {
+          var cls = 'opt';
+          if (curTermAnswered !== null && i === curTermAnswered) cls += (o === q.correct ? ' ok' : ' bad');
+          return '<button type="button" class="' + cls + '"' + (curTermAnswered !== null ? ' disabled' : '') + ' onclick="chooseTermAnswer(' + i + ')">' + esc(o) + '</button>';
+        }).join('') + '</div>' +
+        (curTermAnswered !== null ? '<button type="button" class="primary-btn" onclick="nextTermQuestion()">' + (curQIdx === qtotal - 1 ? 'See results' : 'Next term →') + '</button>' : '') +
+        '</div></div>';
+    }
+
+    // ---------- Flashcards admin ----------
+    var editingFlashId = null, fcCount = 0;
+    function addFlashRow(pre) {
+      var id = ++fcCount, d = document.createElement('div');
+      d.className = 'qb-item';
+      d.innerHTML = '<div class="qb-head"><b>Term</b><button type="button" onclick="this.closest(\'.qb-item\').remove()">Remove</button></div><input class="fc-term" placeholder="Type the term or question">' +
+        [0, 1, 2, 3].map(function (i) {
+          return '<div class="qb-opt"><input type="radio" name="fcc' + id + '" value="' + i + '"' + (i === 0 ? ' checked' : '') + '><input class="fc-opt" placeholder="Option ' + 'ABCD'[i] + '"></div>';
+        }).join('') + '<p class="hint" style="color:#888">Select the circle next to the correct answer.</p>';
+      document.getElementById('fcb').appendChild(d);
+      if (pre) {
+        d.querySelector('.fc-term').value = pre.term;
+        d.querySelectorAll('.fc-opt').forEach(function (o, i) { o.value = pre.options[i] || ''; });
+        d.querySelectorAll('input[type=radio]')[pre.correct].checked = true;
+      }
+    }
+    function readFlashCards() {
+      var out = [];
+      document.querySelectorAll('#fcb .qb-item').forEach(function (d) {
+        var term = d.querySelector('.fc-term').value.trim(), opts = [], correct = -1;
+        var ch = d.querySelector('input[type=radio]:checked'), ci = ch ? +ch.value : 0;
+        d.querySelectorAll('.fc-opt').forEach(function (o, i) {
+          var v = o.value.trim();
+          if (v) { if (i === ci) correct = opts.length; opts.push(v); }
+        });
+        if (term && opts.length > 1 && correct >= 0) out.push({ term: term, options: opts, correct: correct });
+      });
+      return out;
+    }
+    function resetFlashForm() {
+      editingFlashId = null;
+      document.getElementById('fc-title').value = ''; document.getElementById('fc-desc').value = '';
+      document.getElementById('fc-premium').checked = false;
+      document.getElementById('fcb').innerHTML = ''; addFlashRow();
+      document.getElementById('fc-h').textContent = 'Add a set of terms';
+      document.getElementById('fc-btn').textContent = 'Add set';
+      document.getElementById('fc-cancel').hidden = true;
+      document.getElementById('fc-msg').textContent = '';
+    }
+    function saveFlashSet() {
+      var msg = document.getElementById('fc-msg');
+      var title = document.getElementById('fc-title').value.trim();
+      var desc = document.getElementById('fc-desc').value.trim();
+      var premium = document.getElementById('fc-premium').checked;
+      var cards = readFlashCards();
+      if (!title) { msg.style.color = '#f87171'; msg.textContent = 'Please enter a set title.'; return; }
+      if (!cards.length) { msg.style.color = '#f87171'; msg.textContent = 'Add at least one term with a term name, at least 2 choices, and a correct answer selected.'; return; }
+      var wasEdit = !!editingFlashId;
+      var data = { title: title, desc: desc, cards: cards, premium: premium };
+      msg.style.color = '#aaa'; msg.textContent = 'Saving…';
+      var task = wasEdit
+        ? window.fb.updateDoc(window.fb.doc(window.fb.db, 'flashSets', editingFlashId), data)
+        : window.fb.addDoc(window.fb.collection(window.fb.db, 'flashSets'), data);
+      task.then(function () {
+        resetFlashForm();
+        msg.style.color = '#34d399'; msg.textContent = (wasEdit ? 'Saved! (' : 'Added! (') + cards.length + ' term' + (cards.length === 1 ? '' : 's') + ')';
+      }).catch(function (e) {
+        msg.style.color = '#f87171'; msg.textContent = 'Could not save: ' + e.message;
+      });
+    }
+    function editFlashSet(id) {
+      var s = flashSets.find(function (x) { return x.id === id; });
+      editingFlashId = id;
+      document.getElementById('fc-title').value = s.title;
+      document.getElementById('fc-desc').value = s.desc || '';
+      document.getElementById('fc-premium').checked = !!s.premium;
+      document.getElementById('fcb').innerHTML = '';
+      s.cards.forEach(function (c) { addFlashRow(c); });
+      document.getElementById('fc-h').textContent = 'Edit set of terms';
+      document.getElementById('fc-btn').textContent = 'Save changes';
+      document.getElementById('fc-cancel').hidden = false;
+      document.getElementById('fc-msg').textContent = '';
+      document.getElementById('flashcard-admin').scrollIntoView();
+    }
+    function deleteFlashSet(id) {
+      if (editingFlashId === id) resetFlashForm();
+      window.fb.deleteDoc(window.fb.doc(window.fb.db, 'flashSets', id)).catch(function (e) { alert('Could not delete: ' + e.message); });
+    }
+    function renderFlashAdminList() {
+      var list = document.getElementById('fc-list');
+      if (!list) return;
+      list.innerHTML = flashSets.length ? flashSets.map(function (s) {
+        return '<div class="la-row"><span>' + esc(s.title) + ' (' + s.cards.length + ' terms' + (s.premium ? ' · 🔒 Premium' : ' · Free') + ')</span><span><button style="color:#93c5fd;margin-right:14px" onclick="editFlashSet(\'' + s.id + '\')">Edit</button><button onclick="deleteFlashSet(\'' + s.id + '\')">Delete</button></span></div>';
+      }).join('') : '<p class="hint">Nothing added yet.</p>';
+    }
+
+    // ---------- Admin: Manage access (Firestore "roles" collection) ----------
+    async function grantRole() {
+      var msg = document.getElementById('role-msg');
+      var email = document.getElementById('role-email').value.trim().toLowerCase();
+      var role = document.getElementById('role-select').value;
+      if (!email || email.indexOf('@') === -1) { msg.style.color = '#f87171'; msg.textContent = 'Enter a valid email address.'; return; }
+      try {
+        await window.fb.setDoc(window.fb.doc(window.fb.db, 'roles', email), { role: role });
+        document.getElementById('role-email').value = '';
+        msg.style.color = '#34d399'; msg.textContent = 'Granted ' + role + ' access to ' + email + '.';
+        renderRolesList();
+      } catch (e) {
+        msg.style.color = '#f87171'; msg.textContent = 'Could not save: ' + e.message;
+      }
+    }
+    async function changeRole(email, role) {
+      try { await window.fb.setDoc(window.fb.doc(window.fb.db, 'roles', email), { role: role }); renderRolesList(); }
+      catch (e) { alert('Could not update role: ' + e.message); }
+    }
+    async function revokeRole(email) {
+      try { await window.fb.deleteDoc(window.fb.doc(window.fb.db, 'roles', email)); renderRolesList(); }
+      catch (e) { alert('Could not revoke: ' + e.message); }
+    }
+    async function renderRolesList() {
+      var box = document.getElementById('roles-list');
+      if (!box) return;
+      box.innerHTML = '<p class="hint">Loading…</p>';
+      try {
+        var snap = await window.fb.getDocs(window.fb.collection(window.fb.db, 'roles'));
+        var rows = [];
+        snap.forEach(function (d) { rows.push({ email: d.id, role: d.data().role }); });
+        rows.sort(function (a, b) { return a.email.localeCompare(b.email); });
+        box.innerHTML = rows.length ? rows.map(function (r) {
+          return '<div class="la-row"><span>' + esc(r.email) + '</span><span>' +
+            '<select onchange="changeRole(\'' + r.email + '\', this.value)">' +
+            ['reviewee', 'refresher', 'full', 'admin'].map(function (opt) { return '<option value="' + opt + '"' + (opt === r.role || (opt === 'full' && r.role === 'both') ? ' selected' : '') + '>' + opt + '</option>'; }).join('') +
+            '</select><button onclick="revokeRole(\'' + r.email + '\')">Revoke</button></span></div>';
+        }).join('') : '<p class="hint">Nobody has access yet — add your own email above first.</p>';
+      } catch (e) {
+        box.innerHTML = '<p class="hint" style="color:#f87171">Could not load the access list: ' + esc(e.message) + '</p>';
+      }
+    }
+
+    // ---------- Admin: Student Scores ----------
+    var lastGradesLog = [];
+    async function renderAdminGrades() {
+      var box = document.getElementById('grades-table');
+      if (!box) return;
+      box.innerHTML = '<p class="hint">Loading…</p>';
+      try {
+        var snap = await window.fb.getDocs(window.fb.collection(window.fb.db, 'scores'));
+        var log = [];
+        snap.forEach(function (d) { log.push(d.data()); });
+        log.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+        lastGradesLog = log;
+        if (!log.length) { box.innerHTML = '<p class="hint">No quiz attempts recorded yet.</p>'; return; }
+        var rows = log.map(function (e) {
+          return '<tr><td>' + esc(e.email) + '</td><td>' + esc(e.role) + '</td><td>' + esc(e.type) + '</td><td>' + esc(e.title) + '</td>' +
+            '<td style="color:' + (e.score >= 70 ? '#34d399' : '#f87171') + ';font-weight:700">' + e.score + '%</td><td>' + fmtDate(e.date) + '</td></tr>';
+        }).join('');
+        box.innerHTML = '<div class="grades-wrap"><table class="grades-table"><thead><tr><th>Student</th><th>Role</th><th>Type</th><th>Worksheet</th><th>Score</th><th>Date</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+      } catch (e) {
+        box.innerHTML = '<p class="hint" style="color:#f87171">Could not load scores: ' + esc(e.message) + '</p>';
+      }
+    }
+    function downloadGradesExcel() {
+      if (!lastGradesLog.length) { alert('No scores recorded yet.'); return; }
+      if (!window.XLSX) { alert('The spreadsheet library needs an internet connection to load once — try again in a moment.'); return; }
+      var rows = lastGradesLog.map(function (e) {
+        return { Student: e.email, Role: e.role, Type: e.type, Worksheet: e.title, 'Score (%)': e.score, Date: fmtDate(e.date) };
+      });
+      var ws = XLSX.utils.json_to_sheet(rows);
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Scores');
+      XLSX.writeFile(wb, 'angle-review-scores.xlsx');
+    }
+
+    // ---------- Admin ----------
+    var qCount = 0;
+    function addQ(pre) {
+      var id = ++qCount, d = document.createElement('div');
+      d.className = 'qb-item';
+      d.innerHTML = '<div class="qb-head"><b>Question</b><button type="button" onclick="this.closest(\'.qb-item\').remove()">Remove</button></div><input class="qb-q" placeholder="Type the question">' +
+        [0, 1, 2, 3].map(function (i) {
+          return '<div class="qb-opt"><input type="radio" name="qc' + id + '" value="' + i + '"' + (i === 0 ? ' checked' : '') + '><input class="qb-o" placeholder="Option ' + 'ABCD'[i] + '"></div>';
+        }).join('') + '<p class="hint">Select the circle next to the correct answer.</p>';
+      document.getElementById('qb').appendChild(d);
+      if (pre) {
+        d.querySelector('.qb-q').value = pre.q;
+        d.querySelectorAll('.qb-o').forEach(function (o, i) { o.value = pre.opts[i] || ''; });
+        d.querySelectorAll('input[type=radio]')[pre.a].checked = true;
+      }
+    }
+    var editingId = null;
+    function resetForm() {
+      editingId = null;
+      ['la-title', 'la-link'].forEach(function (x) { document.getElementById(x).value = ''; });
+      document.getElementById('qb').innerHTML = ''; addQ();
+      pickedPdf = null; document.getElementById('la-pdf').value = ''; document.getElementById('la-pdf-name').textContent = '';
+      document.getElementById('la-h').textContent = 'Add a video lecture';
+      document.getElementById('la-btn').textContent = 'Add lecture';
+      document.getElementById('la-cancel').hidden = true;
+    }
+    function wasEditKeepPdf() { var old = lessons.find(function (x) { return x.id === editingId; }); return old ? old.pdf : null; }
+    function editLesson(id) {
+      var l = lessons.find(function (x) { return x.id === id; });
+      editingId = id;
+      pickedPdf = null; document.getElementById('la-pdf-name').textContent = l.pdf ? 'Current: ' + l.pdf.name + ' (choose a new file to replace it)' : ''; document.getElementById('la-pdf-name').style.color = '#888'; document.getElementById('la-pdf').value = '';
+      document.getElementById('la-subject').value = l.subject;
+      document.getElementById('la-title').value = l.title;
+      document.getElementById('la-link').value = 'https://drive.google.com/file/d/' + l.video + '/view';
+      document.getElementById('qb').innerHTML = '';
+      l.quiz.forEach(function (q) { addQ(q); });
+      if (!l.quiz.length) addQ();
+      document.getElementById('la-h').textContent = 'Edit lecture';
+      document.getElementById('la-btn').textContent = 'Save changes';
+      document.getElementById('la-cancel').hidden = false;
+      document.getElementById('la-msg').textContent = '';
+      document.getElementById('lesson-admin').scrollIntoView();
+    }
+    function readQuiz() {
+      var out = [];
+      document.querySelectorAll('#qb .qb-item').forEach(function (d) {
+        var q = d.querySelector('.qb-q').value.trim(), opts = [], a = -1;
+        var ch = d.querySelector('input[type=radio]:checked'), ci = ch ? +ch.value : 0;
+        d.querySelectorAll('.qb-o').forEach(function (o, i) {
+          var v = o.value.trim();
+          if (v) { if (i === ci) a = opts.length; opts.push(v); }
+        });
+        if (q && opts.length > 1 && a >= 0) out.push({ q: q, opts: opts, a: a });
+      });
+      return out;
+    }
+    function goAddLesson() {
+      navigateTo('admin-view');
+      document.getElementById('la-subject').value = curSubject;
+      document.getElementById('lesson-admin').scrollIntoView();
+    }
+    function renderAdmin() {
+      var sel = document.getElementById('la-subject');
+      if (!sel.options.length) sel.innerHTML = SUBJECTS.map(function (n, i) { return '<option value="' + i + '">' + (i >= 6 ? 'Refresher: ' : 'Reviewee: ') + esc(n) + '</option>'; }).join('');
+      document.getElementById('la-list').innerHTML = lessons.length ? lessons.map(function (l) {
+        return '<div class="la-row"><span>' + esc(SUBJECTS[l.subject]) + ' — ' + esc(l.title) + ' (' + (l.video ? '🎬' : '') + (l.pdf ? '📄' : '') + ' · ' + l.quiz.length + ' Q)</span><span><button style="color:#93c5fd;margin-right:14px" onclick="editLesson(\'' + l.id + '\')">Edit</button><button onclick="deleteLesson(\'' + l.id + '\')">Delete</button></span></div>';
+      }).join('') : '<p class="hint">Nothing added yet.</p>';
+    }
+
+    function addLesson() {
+      var msg = document.getElementById('la-msg');
+      var title = document.getElementById('la-title').value.trim();
+      var link = document.getElementById('la-link').value.trim();
+      var id = link ? driveId(link) : null;
+      var quiz = readQuiz();
+      var pdf = pickedPdf || (editingId ? wasEditKeepPdf() : null);
+      if (!title) { msg.style.color = '#f87171'; msg.textContent = 'Please enter a title.'; return; }
+      if (link && !id) { msg.style.color = '#f87171'; msg.textContent = 'That doesn\'t look like a Google Drive file link.'; return; }
+      if (!id && !pdf) { msg.style.color = '#f87171'; msg.textContent = 'Add a video link, a PDF, or both.'; return; }
+      var wasEdit = !!editingId;
+      var data = { subject: +document.getElementById('la-subject').value, title: title, video: id, quiz: quiz, pdf: pdf };
+      msg.style.color = '#aaa'; msg.textContent = 'Saving…';
+      var task = wasEdit
+        ? window.fb.updateDoc(window.fb.doc(window.fb.db, 'lessons', editingId), data)
+        : window.fb.addDoc(window.fb.collection(window.fb.db, 'lessons'), data);
+      task.then(function () {
+        resetForm();
+        msg.style.color = '#34d399'; msg.textContent = (wasEdit ? 'Saved! (' : 'Added! (') + quiz.length + ' quiz question' + (quiz.length === 1 ? '' : 's') + ' recognised)';
+      }).catch(function (e) {
+        msg.style.color = '#f87171'; msg.textContent = 'Could not save: ' + e.message;
+      });
+    }
+
+    function deleteLesson(id) {
+      if (editingId === id) resetForm();
+      window.fb.deleteDoc(window.fb.doc(window.fb.db, 'lessons', id)).catch(function (e) { alert('Could not delete: ' + e.message); });
+    }
+
+    function startLessonsListener() {
+      window.fb.onSnapshot(window.fb.collection(window.fb.db, 'lessons'), function (snap) {
+        lessons = [];
+        snap.forEach(function (d) { lessons.push(Object.assign({ id: d.id }, d.data())); });
+        renderAdmin();
+        if (!document.getElementById('subject-view').classList.contains('hidden')) renderSubject();
+      }, function (err) { console.error('Lessons listener error:', err); });
+    }
+
+    document.querySelectorAll('.subject-card').forEach(function (card, i) {
+      card.setAttribute('tabindex', '0');
+      card.onclick = function () { openSubject(i); };
+      card.onkeydown = function (e) { if (e.key === 'Enter') openSubject(i); };
+      card.querySelector('a').onclick = function (e) { e.preventDefault(); };
+    });
+    renderAdmin(); addQ(); renderAnnouncements(); renderFlashAdminList(); addFlashRow();
+    startAnnouncementsListener();
+    startFlashListener();
+
+    // On first load, show the login screen
+    renderAuth();
+    navigateTo('login-view');
+  </script>
+</body>
+</html>

@@ -644,19 +644,19 @@
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
           <div style="background: #18181b; border: 1px solid #27272a; padding: 25px; border-radius: 6px;">
-            <h3 style="font-size: 18px; margin-bottom: 10px;">Question Bank</h3>
-            <p style="color: #888; font-size: 12px; margin-bottom: 20px;">1,420 civil engineering questions configured across 6 modules.</p>
-            <span style="font: 500 11px 'DM Mono', monospace; color: #f59e0b;">● Live & Verified</span>
+            <h3 style="font-size: 18px; margin-bottom: 10px;">Content library</h3>
+            <p id="stat-content" style="color: #888; font-size: 12px; margin-bottom: 20px;">Loading…</p>
+            <span style="font: 500 11px 'DM Mono', monospace; color: #f59e0b;">● Live in Firestore</span>
           </div>
           <div style="background: #18181b; border: 1px solid #27272a; padding: 25px; border-radius: 6px;">
-            <h3 style="font-size: 18px; margin-bottom: 10px;">Active Reviewees &amp; Refreshers</h3>
-            <p style="color: #888; font-size: 12px; margin-bottom: 20px;">842 enrolled reviewees currently practicing board concepts.</p>
-            <span style="font: 500 11px 'DM Mono', monospace; color: #10b981;">● 128 Online Now</span>
+            <h3 style="font-size: 18px; margin-bottom: 10px;">People with access</h3>
+            <p id="stat-people" style="color: #888; font-size: 12px; margin-bottom: 20px;">Loading…</p>
+            <span style="font: 500 11px 'DM Mono', monospace; color: #10b981;">● Granted via Manage access</span>
           </div>
           <div style="background: #18181b; border: 1px solid #27272a; padding: 25px; border-radius: 6px;">
-            <h3 style="font-size: 18px; margin-bottom: 10px;">Role Access Control</h3>
-            <p style="color: #888; font-size: 12px; margin-bottom: 20px;">Google Workspace OAuth restricted to valid Gmail accounts.</p>
-            <span style="font: 500 11px 'DM Mono', monospace; color: #3b82f6;">● Gmail SSO Active</span>
+            <h3 style="font-size: 18px; margin-bottom: 10px;">Sign-in</h3>
+            <p style="color: #888; font-size: 12px; margin-bottom: 20px;">Real Google sign-in, restricted to Gmail accounts you've granted access to.</p>
+            <span style="font: 500 11px 'DM Mono', monospace; color: #3b82f6;">● Firebase Auth</span>
           </div>
         </div>
         <div id="announce-admin">
@@ -843,7 +843,7 @@
       });
       if (viewId === 'guest-terms-view') renderGuestTerms();
       if (viewId === 'scores-view') renderScoresView();
-      if (viewId === 'admin-view') { renderAdminGrades(); renderRolesList(); }
+      if (viewId === 'admin-view') { renderAdminGrades(); renderRolesList(); renderAdminStats(); }
       window.scrollTo(0, 0);
     }
 
@@ -1377,6 +1377,7 @@
         });
         renderFlashSection();
         renderFlashAdminList();
+        renderAdminStats();
         if (!document.getElementById('guest-terms-view').classList.contains('hidden')) renderGuestTerms();
       }, function (err) { console.error('Terms listener error:', err); });
     }
@@ -1628,8 +1629,15 @@
             ['reviewee', 'refresher', 'full', 'admin'].map(function (opt) { return '<option value="' + opt + '"' + (opt === r.role || (opt === 'full' && r.role === 'both') ? ' selected' : '') + '>' + opt + '</option>'; }).join('') +
             '</select><button onclick="revokeRole(\'' + r.email + '\')">Revoke</button></span></div>';
         }).join('') : '<p class="hint">Nobody has access yet — add your own email above first.</p>';
+        var statP = document.getElementById('stat-people');
+        if (statP) {
+          var admins = rows.filter(function (r) { return r.role === 'admin'; }).length;
+          statP.textContent = rows.length + ' total (' + admins + ' admin' + (admins === 1 ? '' : 's') + ', ' + (rows.length - admins) + ' student' + ((rows.length - admins) === 1 ? '' : 's') + ')';
+        }
       } catch (e) {
         box.innerHTML = '<p class="hint" style="color:#f87171">Could not load the access list: ' + esc(e.message) + '</p>';
+        var statP2 = document.getElementById('stat-people');
+        if (statP2) statP2.textContent = 'Could not load';
       }
     }
 
@@ -1734,6 +1742,14 @@
       document.getElementById('la-list').innerHTML = lessons.length ? lessons.map(function (l) {
         return '<div class="la-row"><span>' + esc(SUBJECTS[l.subject]) + ' — ' + esc(l.title) + ' (' + (l.video ? '🎬' : '') + (l.pdf ? '📄' : '') + ' · ' + l.quiz.length + ' Q)</span><span><button style="color:#93c5fd;margin-right:14px" onclick="editLesson(\'' + l.id + '\')">Edit</button><button onclick="deleteLesson(\'' + l.id + '\')">Delete</button></span></div>';
       }).join('') : '<p class="hint">Nothing added yet.</p>';
+      renderAdminStats();
+    }
+    function renderAdminStats() {
+      var el = document.getElementById('stat-content');
+      if (!el) return;
+      var quizQs = lessons.reduce(function (n, l) { return n + (l.quiz ? l.quiz.length : 0); }, 0);
+      var termCards = flashSets.reduce(function (n, s) { return n + (s.cards ? s.cards.length : 0); }, 0);
+      el.textContent = lessons.length + ' lecture' + (lessons.length === 1 ? '' : 's') + ' (' + quizQs + ' quiz question' + (quizQs === 1 ? '' : 's') + '), ' + flashSets.length + ' Terms set' + (flashSets.length === 1 ? '' : 's') + ' (' + termCards + ' term' + (termCards === 1 ? '' : 's') + ')';
     }
 
     function addLesson() {

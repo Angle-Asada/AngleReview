@@ -799,6 +799,9 @@
       collection, query, where, orderBy, getDocs, onSnapshot,
       arrayUnion, arrayRemove
     } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+    import {
+      getStorage, ref, uploadBytes, getDownloadURL, deleteObject
+    } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCpPLukkkR9t87C0xZWIStt0JF53Dw7VfI",
@@ -812,13 +815,16 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const storage = getStorage(app);
 
     window.fb = {
-      auth, db, doc, getDoc, setDoc, deleteDoc, addDoc, updateDoc,
+      auth, db, storage, doc, getDoc, setDoc, deleteDoc, addDoc, updateDoc,
       collection, query, where, orderBy, getDocs, onSnapshot,
       arrayUnion, arrayRemove,
+      ref, uploadBytes, getDownloadURL, deleteObject,
       GoogleAuthProvider, signInWithPopup, signOut
     };
+    window.dispatchEvent(new Event('fbready'));
 
     onAuthStateChanged(auth, function (user) {
       if (window.handleAuthChange) window.handleAuthChange(user);
@@ -1201,21 +1207,21 @@
       catch (e) { alert('Could not delete: ' + e.message); }
     }
 
-    // ---------- PDF watermarking ----------
-    var pickedPdf = null;
+    // ---------- PDF watermarking (files live in Firebase Storage) ----------
+    var pickedPdfFile = null;
     function handlePdfPick(inp) {
       var f = inp.files[0], note = document.getElementById('la-pdf-name');
-      if (!f) { pickedPdf = null; note.textContent = ''; return; }
-      if (f.size > 650 * 1024) { note.style.color = '#f87171'; note.textContent = 'That file is over 650KB — too big to store alongside the lecture. Try compressing it.'; inp.value = ''; pickedPdf = null; return; }
-      var r = new FileReader();
-      r.onload = function () { pickedPdf = { name: f.name, data: r.result }; note.style.color = '#34d399'; note.textContent = 'Ready: ' + f.name; };
-      r.readAsDataURL(f);
+      if (!f) { pickedPdfFile = null; note.textContent = ''; return; }
+      if (f.size > 50 * 1024 * 1024) { note.style.color = '#f87171'; note.textContent = 'That file is over 50MB — try a smaller one.'; inp.value = ''; pickedPdfFile = null; return; }
+      pickedPdfFile = f;
+      note.style.color = '#34d399'; note.textContent = 'Ready to upload: ' + f.name;
     }
     async function openWatermarkedPdf(lessonId) {
       var l = lessons.find(function (x) { return x.id === lessonId; });
       if (!l.pdf || !window.PDFLib) { alert('This PDF watermarker needs an internet connection to load once.'); return; }
       try {
-        var bytes = Uint8Array.from(atob(l.pdf.data.split(',')[1]), function (c) { return c.charCodeAt(0); });
+        var res = await fetch(l.pdf.url);
+        var bytes = new Uint8Array(await res.arrayBuffer());
         var doc = await PDFLib.PDFDocument.load(bytes);
         var font = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
         var stamp = (currentUser ? currentUser.email : 'unknown') + '  ·  ' + new Date().toLocaleString();
@@ -1696,7 +1702,7 @@
       editingId = null;
       ['la-title', 'la-link'].forEach(function (x) { document.getElementById(x).value = ''; });
       document.getElementById('qb').innerHTML = ''; addQ();
-      pickedPdf = null; document.getElementById('la-pdf').value = ''; document.getElementById('la-pdf-name').textContent = '';
+      pickedPdfFile = null; document.getElementById('la-pdf').value = ''; document.getElementById('la-pdf-name').textContent = '';
       document.getElementById('la-h').textContent = 'Add a video lecture';
       document.getElementById('la-btn').textContent = 'Add lecture';
       document.getElementById('la-cancel').hidden = true;
@@ -1705,7 +1711,7 @@
     function editLesson(id) {
       var l = lessons.find(function (x) { return x.id === id; });
       editingId = id;
-      pickedPdf = null; document.getElementById('la-pdf-name').textContent = l.pdf ? 'Current: ' + l.pdf.name + ' (choose a new file to replace it)' : ''; document.getElementById('la-pdf-name').style.color = '#888'; document.getElementById('la-pdf').value = '';
+      pickedPdfFile = null; document.getElementById('la-pdf-name').textContent = l.pdf ? 'Current: ' + l.pdf.name + ' (choose a new file to replace it)' : ''; document.getElementById('la-pdf-name').style.color = '#888'; document.getElementById('la-pdf').value = '';
       document.getElementById('la-subject').value = l.subject;
       document.getElementById('la-title').value = l.title;
       document.getElementById('la-link').value = 'https://drive.google.com/file/d/' + l.video + '/view';
@@ -1752,33 +1758,46 @@
       el.textContent = lessons.length + ' lecture' + (lessons.length === 1 ? '' : 's') + ' (' + quizQs + ' quiz question' + (quizQs === 1 ? '' : 's') + '), ' + flashSets.length + ' Terms set' + (flashSets.length === 1 ? '' : 's') + ' (' + termCards + ' term' + (termCards === 1 ? '' : 's') + ')';
     }
 
-    function addLesson() {
+    async function addLesson() {
       var msg = document.getElementById('la-msg');
       var title = document.getElementById('la-title').value.trim();
       var link = document.getElementById('la-link').value.trim();
       var id = link ? driveId(link) : null;
       var quiz = readQuiz();
-      var pdf = pickedPdf || (editingId ? wasEditKeepPdf() : null);
+      var keptPdf = editingId ? wasEditKeepPdf() : null;
       if (!title) { msg.style.color = '#f87171'; msg.textContent = 'Please enter a title.'; return; }
       if (link && !id) { msg.style.color = '#f87171'; msg.textContent = 'That doesn\'t look like a Google Drive file link.'; return; }
-      if (!id && !pdf) { msg.style.color = '#f87171'; msg.textContent = 'Add a video link, a PDF, or both.'; return; }
+      if (!id && !pickedPdfFile && !keptPdf) { msg.style.color = '#f87171'; msg.textContent = 'Add a video link, a PDF, or both.'; return; }
       var wasEdit = !!editingId;
-      var data = { subject: +document.getElementById('la-subject').value, title: title, video: id, quiz: quiz, pdf: pdf };
-      msg.style.color = '#aaa'; msg.textContent = 'Saving…';
-      var task = wasEdit
-        ? window.fb.updateDoc(window.fb.doc(window.fb.db, 'lessons', editingId), data)
-        : window.fb.addDoc(window.fb.collection(window.fb.db, 'lessons'), data);
-      task.then(function () {
+      msg.style.color = '#aaa'; msg.textContent = pickedPdfFile ? 'Uploading PDF…' : 'Saving…';
+      try {
+        var pdf = keptPdf;
+        if (pickedPdfFile) {
+          var path = 'lecture_pdfs/' + Date.now() + '_' + pickedPdfFile.name;
+          var sref = window.fb.ref(window.fb.storage, path);
+          await window.fb.uploadBytes(sref, pickedPdfFile);
+          var url = await window.fb.getDownloadURL(sref);
+          pdf = { name: pickedPdfFile.name, url: url, path: path };
+        }
+        var data = { subject: +document.getElementById('la-subject').value, title: title, video: id, quiz: quiz, pdf: pdf };
+        msg.textContent = 'Saving…';
+        if (wasEdit) await window.fb.updateDoc(window.fb.doc(window.fb.db, 'lessons', editingId), data);
+        else await window.fb.addDoc(window.fb.collection(window.fb.db, 'lessons'), data);
         resetForm();
         msg.style.color = '#34d399'; msg.textContent = (wasEdit ? 'Saved! (' : 'Added! (') + quiz.length + ' quiz question' + (quiz.length === 1 ? '' : 's') + ' recognised)';
-      }).catch(function (e) {
+      } catch (e) {
         msg.style.color = '#f87171'; msg.textContent = 'Could not save: ' + e.message;
-      });
+      }
     }
 
     function deleteLesson(id) {
+      var l = lessons.find(function (x) { return x.id === id; });
       if (editingId === id) resetForm();
-      window.fb.deleteDoc(window.fb.doc(window.fb.db, 'lessons', id)).catch(function (e) { alert('Could not delete: ' + e.message); });
+      window.fb.deleteDoc(window.fb.doc(window.fb.db, 'lessons', id)).then(function () {
+        if (l && l.pdf && l.pdf.path) {
+          window.fb.deleteObject(window.fb.ref(window.fb.storage, l.pdf.path)).catch(function () {});
+        }
+      }).catch(function (e) { alert('Could not delete: ' + e.message); });
     }
 
     function startLessonsListener() {
@@ -1797,8 +1816,8 @@
       card.querySelector('a').onclick = function (e) { e.preventDefault(); };
     });
     renderAdmin(); addQ(); renderAnnouncements(); renderFlashAdminList(); addFlashRow();
-    startAnnouncementsListener();
-    startFlashListener();
+    function whenFbReady(cb) { if (window.fb) cb(); else window.addEventListener('fbready', cb, { once: true }); }
+    whenFbReady(function () { startAnnouncementsListener(); startFlashListener(); });
 
     // On first load, show the login screen
     renderAuth();

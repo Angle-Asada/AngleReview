@@ -374,9 +374,8 @@
     .sv-sub { color: #666; font-size: 14px; margin: -18px 0 26px; }
     .ann-tag { font: 500 9px 'DM Mono', monospace; background: #eee; color: #555; padding: 2px 8px; border-radius: 100px; margin-left: 10px; align-self: center; font-style: normal; white-space: nowrap; }
     .sv-video { overflow: hidden; }
-    .wm { position: absolute; inset: -60%; display: flex; flex-wrap: wrap; align-content: space-around; justify-content: space-around; transform: rotate(-25deg); pointer-events: none; z-index: 2; }
-    .wm span { font: 600 13px Manrope, sans-serif; color: rgba(255,255,255,0.3); text-shadow: 0 0 3px rgba(0,0,0,0.6); padding: 18px 24px; white-space: nowrap; }
-    .wm-move { position: absolute; top: 20%; left: 10%; z-index: 3; pointer-events: none; font: 700 15px Manrope, sans-serif; color: rgba(255,255,255,0.5); text-shadow: 0 0 4px #000; transition: all 1s; }
+    .wm { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; pointer-events: none; z-index: 2; }
+    .wm span { font: 700 clamp(20px, 4.5vw, 46px) Manrope, sans-serif; color: rgba(255,255,255,0.3); text-shadow: 0 0 8px rgba(0,0,0,0.55); white-space: nowrap; letter-spacing: 0.02em; transform: rotate(-30deg); }
     .sv-block { position: absolute; top: 0; right: 0; width: 64px; height: 64px; z-index: 4; }
     .wm-stop { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; }
     #sv-video:fullscreen { padding-top: 0; height: 100%; }
@@ -1032,9 +1031,8 @@
     // ---------- Watermark ----------
     var wmTimer = null;
     function watermarkHtml() {
-      var t = esc(currentUser ? currentUser.email : '') + ' · ' + fmtDate(new Date()), tiles = '';
-      for (var i = 0; i < 40; i++) tiles += '<span>' + t + '</span>';
-      return '<div class="wm" id="wm">' + tiles + '</div><div class="wm-move" id="wm-move">' + t + '</div>';
+      var t = esc(currentUser ? currentUser.email : '') + ' · ' + fmtDate(new Date());
+      return '<div class="wm" id="wm"><span>' + t + '</span></div>';
     }
     function goFull() { var v = document.getElementById('sv-video'); if (v && v.requestFullscreen) v.requestFullscreen(); }
     function startWatermark() {
@@ -1043,14 +1041,12 @@
       wmTimer = setInterval(function () {
         var box = document.getElementById('sv-video');
         if (!box) { clearInterval(wmTimer); return; }
-        var wm = document.getElementById('wm'), mv = document.getElementById('wm-move');
-        var bad = !wm || !mv || [wm, mv].some(function (e) {
-          var c = getComputedStyle(e);
-          return c.display === 'none' || c.visibility === 'hidden' || parseFloat(c.opacity) < 0.15 || e.offsetWidth === 0;
-        });
+        var wm = document.getElementById('wm');
+        var bad = !wm || (function () {
+          var c = getComputedStyle(wm);
+          return c.display === 'none' || c.visibility === 'hidden' || parseFloat(c.opacity) < 0.15 || wm.offsetWidth === 0;
+        })();
         if (bad) { box.innerHTML = '<div class="wm-stop">Video paused. Please reload the page.</div>'; clearInterval(wmTimer); return; }
-        mv.style.top = (10 + Math.random() * 70) + '%';
-        mv.style.left = (5 + Math.random() * 55) + '%';
       }, 4000);
     }
 

@@ -744,7 +744,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
     import {
-      getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+      getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
     import {
       getFirestore, doc, getDoc, setDoc, deleteDoc, addDoc, updateDoc,
@@ -774,9 +774,13 @@
       collection, query, where, orderBy, getDocs, onSnapshot,
       arrayUnion, arrayRemove,
       ref, uploadBytes, getDownloadURL, deleteObject,
-      GoogleAuthProvider, signInWithPopup, signOut
+      GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut
     };
     window.dispatchEvent(new Event('fbready'));
+
+    getRedirectResult(auth).catch(function (e) {
+      console.error('Redirect sign-in error:', e);
+    });
 
     onAuthStateChanged(auth, function (user) {
       if (window.handleAuthChange) window.handleAuthChange(user);
@@ -805,6 +809,7 @@
       window.scrollTo(0, 0);
     }
 
+    function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; }
     async function googleSignIn() {
       var toast = document.getElementById('toast');
       document.getElementById('no-access-box').classList.add('hidden');
@@ -812,8 +817,13 @@
       toast.style.display = 'block';
       try {
         var provider = new window.fb.GoogleAuthProvider();
-        await window.fb.signInWithPopup(window.fb.auth, provider);
-        // handleAuthChange fires automatically once sign-in resolves
+        if (isIOS()) {
+          await window.fb.signInWithRedirect(window.fb.auth, provider);
+          // page navigates away to Google and back; handleAuthChange picks it up on return
+        } else {
+          await window.fb.signInWithPopup(window.fb.auth, provider);
+          // handleAuthChange fires automatically once sign-in resolves
+        }
       } catch (e) {
         toast.style.display = 'none';
         if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {

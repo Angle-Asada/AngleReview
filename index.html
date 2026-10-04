@@ -722,6 +722,13 @@
             Continue with Google
           </button>
 
+          <p class="signup" style="margin-top:16px"><a href="#" onclick="event.preventDefault();toggleEmailLogin()">Having trouble with Google? Use email instead →</a></p>
+          <div id="email-login-box" class="hidden" style="margin-top:14px">
+            <input id="email-login-input" type="email" placeholder="you@gmail.com" style="width:100%;border:1px solid #ccc;padding:13px;font:14px Manrope,sans-serif;margin-bottom:10px;background:#fafafa">
+            <button type="button" style="width:100%;padding:13px;background:#fff;color:#111;border:1px solid #ccc;font:600 12px Manrope,sans-serif;cursor:pointer" onclick="sendEmailLink()">Send me a sign-in link</button>
+            <p id="email-login-msg" style="font-size:11px;margin-top:8px"></p>
+          </div>
+
           <p class="signup">Access is limited to registered Gmail accounts.</p>
           <p class="signup">For enrollment, contact us at <a href="https://fb.com/anglereview" target="_blank" rel="noopener">fb.com/anglereview</a></p>
           <p class="signup">Just want free Terms? <a href="#" onclick="event.preventDefault();browseGuestTerms()">Browse without an account →</a></p>
@@ -744,7 +751,8 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
     import {
-      getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged
+      getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged,
+      sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink
     } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
     import {
       getFirestore, doc, getDoc, setDoc, deleteDoc, addDoc, updateDoc,
@@ -774,7 +782,8 @@
       collection, query, where, orderBy, getDocs, onSnapshot,
       arrayUnion, arrayRemove,
       ref, uploadBytes, getDownloadURL, deleteObject,
-      GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut
+      GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut,
+      sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink
     };
     window.dispatchEvent(new Event('fbready'));
 
@@ -829,6 +838,41 @@
         if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
           alert('Sign-in failed: ' + e.message);
         }
+      }
+    }
+
+    function toggleEmailLogin() {
+      document.getElementById('email-login-box').classList.toggle('hidden');
+    }
+    async function sendEmailLink() {
+      var email = document.getElementById('email-login-input').value.trim();
+      var msg = document.getElementById('email-login-msg');
+      if (!email || email.indexOf('@') === -1) { msg.style.color = '#f87171'; msg.textContent = 'Enter a valid email address.'; return; }
+      msg.style.color = '#888'; msg.textContent = 'Sending link…';
+      try {
+        var actionCodeSettings = { url: window.location.href.split('?')[0], handleCodeInApp: true };
+        await window.fb.sendSignInLinkToEmail(window.fb.auth, email, actionCodeSettings);
+        localStorage.setItem('angle_email_for_signin', email);
+        msg.style.color = '#15803d'; msg.textContent = 'Check your email, tap the link we sent to finish signing in.';
+      } catch (e) {
+        msg.style.color = '#f87171'; msg.textContent = 'Could not send: ' + e.message;
+      }
+    }
+    async function completeEmailLinkSignIn() {
+      if (!window.fb.isSignInWithEmailLink(window.fb.auth, window.location.href)) return;
+      var email = localStorage.getItem('angle_email_for_signin');
+      if (!email) email = prompt('Confirm your email to finish signing in:');
+      if (!email) return;
+      var toast = document.getElementById('toast');
+      toast.textContent = 'Signing you in…'; toast.style.display = 'block';
+      try {
+        await window.fb.signInWithEmailLink(window.fb.auth, email, window.location.href);
+        localStorage.removeItem('angle_email_for_signin');
+        history.replaceState(null, '', window.location.pathname + window.location.hash);
+        // handleAuthChange fires automatically via onAuthStateChanged
+      } catch (e) {
+        toast.style.display = 'none';
+        alert('That sign-in link didn\'t work: ' + e.message + '\nTry sending a new one.');
       }
     }
 
@@ -1673,7 +1717,7 @@
     });
     renderAdmin(); addQ(); renderAnnouncements(); renderFlashAdminList(); addFlashRow();
     function whenFbReady(cb) { if (window.fb) cb(); else window.addEventListener('fbready', cb, { once: true }); }
-    whenFbReady(function () { startAnnouncementsListener(); startFlashListener(); });
+    whenFbReady(function () { startAnnouncementsListener(); startFlashListener(); completeEmailLinkSignIn(); });
 
     // On first load, show the login screen
     renderAuth();

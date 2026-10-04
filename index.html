@@ -767,7 +767,7 @@
       arrayUnion, arrayRemove
     } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
     import {
-      getStorage, ref, uploadBytes, getDownloadURL, deleteObject
+      getStorage, ref, uploadBytes, getBytes, deleteObject
     } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js";
 
     const firebaseConfig = {
@@ -788,7 +788,7 @@
       auth, db, storage, doc, getDoc, setDoc, deleteDoc, addDoc, updateDoc,
       collection, query, where, orderBy, getDocs, onSnapshot,
       arrayUnion, arrayRemove,
-      ref, uploadBytes, getDownloadURL, deleteObject,
+      ref, uploadBytes, getBytes, deleteObject,
       GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut,
       sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink
     };
@@ -1270,8 +1270,16 @@
       var l = lessons.find(function (x) { return x.id === lessonId; });
       if (!l.pdf || !window.PDFLib) { alert('This PDF watermarker needs an internet connection to load once.'); return; }
       try {
-        var res = await fetch(l.pdf.url);
-        var bytes = new Uint8Array(await res.arrayBuffer());
+        var bytes;
+        try {
+          // Signed-in download: Storage rules decide who may read the file
+          bytes = new Uint8Array(await window.fb.getBytes(window.fb.ref(window.fb.storage, l.pdf.path)));
+        } catch (sdkErr) {
+          // Older lessons may still carry a public link; use it only if the secure download fails
+          if (!l.pdf.url) throw sdkErr;
+          var res = await fetch(l.pdf.url);
+          bytes = new Uint8Array(await res.arrayBuffer());
+        }
         var doc = await PDFLib.PDFDocument.load(bytes);
         var font = await doc.embedFont(PDFLib.StandardFonts.HelveticaBold);
         var stamp = (currentUser ? currentUser.email : 'unknown') + '  ·  ' + new Date().toLocaleString();
@@ -1733,8 +1741,7 @@
           var path = 'lecture_pdfs/' + Date.now() + '_' + pickedPdfFile.name;
           var sref = window.fb.ref(window.fb.storage, path);
           await window.fb.uploadBytes(sref, pickedPdfFile);
-          var url = await window.fb.getDownloadURL(sref);
-          pdf = { name: pickedPdfFile.name, url: url, path: path };
+          pdf = { name: pickedPdfFile.name, path: path };
         }
         var data = { subject: +document.getElementById('la-subject').value, title: title, video: id, quiz: quiz, pdf: pdf };
         msg.textContent = 'Saving…';

@@ -729,6 +729,13 @@
             <p id="email-login-msg" style="font-size:11px;margin-top:8px"></p>
           </div>
 
+          <div id="email-confirm-box" class="hidden" style="margin-top:14px">
+            <p style="font-size:12px;margin-bottom:8px">Confirm your email to finish signing in:</p>
+            <input id="email-confirm-input" type="email" placeholder="you@gmail.com" onkeydown="if(event.key==='Enter'){event.preventDefault();finishEmailSignIn();}" style="width:100%;border:1px solid #ccc;padding:13px;font:14px Manrope,sans-serif;margin-bottom:10px;background:#fafafa">
+            <button type="button" style="width:100%;padding:13px;background:#111;color:#fff;border:0;font:600 12px Manrope,sans-serif;cursor:pointer" onclick="finishEmailSignIn()">Finish signing in</button>
+            <p id="email-confirm-msg" style="font-size:11px;margin-top:8px"></p>
+          </div>
+
           <p class="signup">Access is limited to registered Gmail accounts.</p>
           <p class="signup">For enrollment, contact us at <a href="https://fb.com/anglereview" target="_blank" rel="noopener">fb.com/anglereview</a></p>
           <p class="signup">Just want free Terms? <a href="#" onclick="event.preventDefault();browseGuestTerms()">Browse without an account →</a></p>
@@ -852,7 +859,7 @@
       try {
         var actionCodeSettings = { url: window.location.href.split('?')[0], handleCodeInApp: true };
         await window.fb.sendSignInLinkToEmail(window.fb.auth, email, actionCodeSettings);
-        localStorage.setItem('angle_email_for_signin', email);
+        try { localStorage.setItem('angle_email_for_signin', email); } catch (e) {}
         msg.style.color = '#15803d'; msg.textContent = 'Check your email, tap the link we sent to finish signing in.';
       } catch (e) {
         msg.style.color = '#f87171'; msg.textContent = 'Could not send: ' + e.message;
@@ -860,19 +867,34 @@
     }
     async function completeEmailLinkSignIn() {
       if (!window.fb.isSignInWithEmailLink(window.fb.auth, window.location.href)) return;
-      var email = localStorage.getItem('angle_email_for_signin');
-      if (!email) email = prompt('Confirm your email to finish signing in:');
-      if (!email) return;
-      var toast = document.getElementById('toast');
-      toast.textContent = 'Signing you in…'; toast.style.display = 'block';
+      var email = null;
+      try { email = localStorage.getItem('angle_email_for_signin'); } catch (e) {}
+      if (email) return finishEmailSignIn(email);
+      // No stored email (different browser / in-app browser): ask inline instead of prompt()
+      navigateTo('login-view');
+      document.getElementById('email-confirm-box').classList.remove('hidden');
+    }
+
+    async function finishEmailSignIn(emailArg) {
+      var email = (typeof emailArg === 'string' && emailArg) ||
+                  document.getElementById('email-confirm-input').value.trim();
+      var msg = document.getElementById('email-confirm-msg');
+      if (!email || email.indexOf('@') === -1) {
+        msg.style.color = '#f87171'; msg.textContent = 'Enter a valid email address.';
+        document.getElementById('email-confirm-box').classList.remove('hidden');
+        return;
+      }
+      msg.style.color = '#888'; msg.textContent = 'Signing you in…';
       try {
         await window.fb.signInWithEmailLink(window.fb.auth, email, window.location.href);
-        localStorage.removeItem('angle_email_for_signin');
+        try { localStorage.removeItem('angle_email_for_signin'); } catch (e) {}
         history.replaceState(null, '', window.location.pathname + window.location.hash);
         // handleAuthChange fires automatically via onAuthStateChanged
       } catch (e) {
-        toast.style.display = 'none';
-        alert('That sign-in link didn\'t work: ' + e.message + '\nTry sending a new one.');
+        navigateTo('login-view');
+        document.getElementById('email-confirm-box').classList.remove('hidden');
+        msg.style.color = '#f87171';
+        msg.textContent = 'That link didn\'t work: ' + e.message + ' Try sending a new one.';
       }
     }
 

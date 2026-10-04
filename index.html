@@ -725,7 +725,7 @@
           <p class="signup" style="margin-top:16px"><a href="#" onclick="event.preventDefault();toggleEmailLogin()">Having trouble with Google? Use email instead →</a></p>
           <div id="email-login-box" class="hidden" style="margin-top:14px">
             <input id="email-login-input" type="email" placeholder="you@gmail.com" style="width:100%;border:1px solid #ccc;padding:13px;font:14px Manrope,sans-serif;margin-bottom:10px;background:#fafafa">
-            <button type="button" style="width:100%;padding:13px;background:#fff;color:#111;border:1px solid #ccc;font:600 12px Manrope,sans-serif;cursor:pointer" onclick="sendEmailLink()">Send me a sign-in link</button>
+            <button type="button" id="email-send-btn" style="width:100%;padding:13px;background:#fff;color:#111;border:1px solid #ccc;font:600 12px Manrope,sans-serif;cursor:pointer" onclick="sendEmailLink()">Send me a sign-in link</button>
             <p id="email-login-msg" style="font-size:11px;margin-top:8px"></p>
           </div>
 
@@ -851,19 +851,54 @@
     function toggleEmailLogin() {
       document.getElementById('email-login-box').classList.toggle('hidden');
     }
+    // ---- Email link cooldown (change the number below to adjust) ----
+    var EMAIL_COOLDOWN_SECONDS = 60;
+    var emailCooldownTimer = null;
+    var emailLastSentMem = 0;
+    function emailCooldownLeft() {
+      var last = emailLastSentMem;
+      try { last = Math.max(last, parseInt(localStorage.getItem('angle_email_last_sent') || '0', 10) || 0); } catch (e) {}
+      return Math.max(0, Math.ceil((last + EMAIL_COOLDOWN_SECONDS * 1000 - Date.now()) / 1000));
+    }
+    function updateEmailSendButton() {
+      var btn = document.getElementById('email-send-btn');
+      if (!btn) return;
+      clearTimeout(emailCooldownTimer);
+      var left = emailCooldownLeft();
+      if (left > 0) {
+        btn.disabled = true; btn.style.opacity = '0.6'; btn.style.cursor = 'not-allowed';
+        btn.textContent = 'Wait ' + left + 's to send another link';
+        emailCooldownTimer = setTimeout(updateEmailSendButton, 1000);
+      } else {
+        btn.disabled = false; btn.style.opacity = ''; btn.style.cursor = 'pointer';
+        btn.textContent = 'Send me a sign-in link';
+      }
+    }
     async function sendEmailLink() {
       var email = document.getElementById('email-login-input').value.trim();
       var msg = document.getElementById('email-login-msg');
+      if (emailCooldownLeft() > 0) { updateEmailSendButton(); return; }
       if (!email || email.indexOf('@') === -1) { msg.style.color = '#f87171'; msg.textContent = 'Enter a valid email address.'; return; }
+      var btn = document.getElementById('email-send-btn');
+      btn.disabled = true;
       msg.style.color = '#888'; msg.textContent = 'Sending link…';
       try {
         var actionCodeSettings = { url: window.location.href.split('?')[0], handleCodeInApp: true };
         await window.fb.sendSignInLinkToEmail(window.fb.auth, email, actionCodeSettings);
-        try { localStorage.setItem('angle_email_for_signin', email); } catch (e) {}
-        msg.style.color = '#15803d'; msg.textContent = 'Check your email, tap the link we sent to finish signing in.';
+        try {
+          localStorage.setItem('angle_email_for_signin', email);
+          localStorage.setItem('angle_last_email', email);
+        } catch (e) {}
+        emailLastSentMem = Date.now();
+        try { localStorage.setItem('angle_email_last_sent', String(emailLastSentMem)); } catch (e) {}
+        msg.style.color = '#15803d'; msg.textContent = 'Check your email (and your Spam folder), tap the link we sent to finish signing in.';
       } catch (e) {
-        msg.style.color = '#f87171'; msg.textContent = 'Could not send: ' + e.message;
+        msg.style.color = '#f87171';
+        msg.textContent = (e && e.code === 'auth/too-many-requests')
+          ? 'Too many attempts. Please wait a few minutes and try again.'
+          : 'Could not send: ' + e.message;
       }
+      updateEmailSendButton();
     }
     async function completeEmailLinkSignIn() {
       if (!window.fb.isSignInWithEmailLink(window.fb.auth, window.location.href)) return;
@@ -1740,6 +1775,17 @@
     renderAdmin(); addQ(); renderAnnouncements(); renderFlashAdminList(); addFlashRow();
     function whenFbReady(cb) { if (window.fb) cb(); else window.addEventListener('fbready', cb, { once: true }); }
     whenFbReady(function () { startAnnouncementsListener(); startFlashListener(); completeEmailLinkSignIn(); });
+
+    // Resume any email cooldown, prefill the last-used email, and ask the browser not to wipe saved login
+    updateEmailSendButton();
+    try {
+      var lastEmail = localStorage.getItem('angle_last_email');
+      if (lastEmail) {
+        document.getElementById('email-login-input').value = lastEmail;
+        document.getElementById('email-confirm-input').value = lastEmail;
+      }
+    } catch (e) {}
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
 
     // On first load, show the login screen
     renderAuth();

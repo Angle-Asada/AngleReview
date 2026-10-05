@@ -435,6 +435,41 @@
     .fcb-item button { background: none; border: 0; color: #f87171; font-size: 12px; padding-top: 10px; }
     .fcb-add { background: none; border: 1px dashed #52525b; color: #ddd; padding: 12px; width: 100%; border-radius: 6px; font-size: 12px; }
     @media(max-width: 800px) { .sv-layout { grid-template-columns: 1fr; } }
+
+    /* ===== PHONE LAYOUT (portrait) ===== */
+    html { -webkit-text-size-adjust: 100%; }
+    body { overflow-x: hidden; }
+    @media (max-width: 800px) {
+      /* Menu becomes a bottom tab bar (it was hidden on phones before) */
+      .nav-links:not(.hidden) {
+        display: flex; position: fixed; left: 0; right: 0; bottom: 0; margin: 0; gap: 0;
+        background: #111; border-top: 1px solid #333; z-index: 120;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .nav-links:not(.hidden) a { flex: 1; text-align: center; padding: 16px 4px; font-size: 12px; color: #ddd; }
+      body:has(.nav-links:not(.hidden)) { padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
+
+      /* Top bar: shorter, no clutter */
+      .navbar { height: 64px; padding: 0 4vw; }
+      .brand small { display: none; }
+      .user-profile { gap: 8px; }
+      .user-profile > .user-avatar, .user-profile > span:not(.role-badge) { display: none; }
+
+      /* Easier to tap; 16px text stops iPhone from zooming into fields */
+      button, .primary-btn, .text-btn { min-height: 44px; }
+      .la-row button, .fcb-item button { min-height: 36px; }
+      input, select, textarea { font-size: 16px !important; min-height: 44px; }
+
+      /* Home and lessons */
+      .hero { min-height: auto; padding: 14vw 5vw; }
+      .hero h1 { font-size: clamp(52px, 17vw, 90px); }
+      .hero-actions { flex-wrap: wrap; gap: 14px; }
+      .primary-btn { padding: 15px 22px; }
+      #subject-view, #flashcard-view, #guest-terms-view, #scores-view { padding: 28px 5vw 60px; }
+      .quiz { padding: 20px; }
+      #drawer, #drawer.wide { width: 100%; padding: 18px; }
+      #admin-view { padding: 30px 4vw !important; }
+    }
   </style>
 </head>
 <body>

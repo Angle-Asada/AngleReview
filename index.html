@@ -436,6 +436,13 @@
     .fcb-add { background: none; border: 1px dashed #52525b; color: #ddd; padding: 12px; width: 100%; border-radius: 6px; font-size: 12px; }
     @media(max-width: 800px) { .sv-layout { grid-template-columns: 1fr; } }
 
+
+    .sc-sec { margin: 44px 0 4px; font-size: 13px; letter-spacing: .14em; font-weight: 800; padding: 10px 14px; background: #111; color: #fff; }
+    .sc-sec small { font-weight: 500; opacity: .7; margin-left: 8px; letter-spacing: 0; }
+    .sc-group { margin: 26px 0 8px; }
+    .sc-group > summary { font-weight: 800; font-size: 22px; cursor: pointer; padding: 10px 0; border-bottom: 2px solid #111; }
+    .sc-group > summary small, .sc-sub small { font-weight: 500; font-size: 12px; opacity: .6; margin-left: 8px; }
+    .sc-sub { margin: 18px 0 8px; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
     /* ===== PHONE LAYOUT (portrait) ===== */
     html { -webkit-text-size-adjust: 100%; }
     body { overflow-x: hidden; }
@@ -484,7 +491,7 @@
       <a href="#home" onclick="navigateTo('home-view')">Home</a>
       <a href="#subjects" id="nav-subjects" onclick="navigateTo('home-view')">Subjects</a>
       <a href="#" onclick="event.preventDefault(); navigateTo('scores-view')">My Scores</a>
-      <a href="#about" onclick="navigateTo('home-view')">About</a>
+      <a href="#" onclick="event.preventDefault(); openSubject(PREV_BATCH)">Prev Batch</a>
     </div>
     
     <!-- Dynamic Auth Container -->
@@ -1064,8 +1071,9 @@
     }
 
     // ---------- Lectures & quizzes ----------
-    var SUBJECTS = ['Structural Engineering','Construction Engineering','Geotechnical Engineering','Hydraulics & Water Resources','Transportation Engineering','Mathematics & Surveying','PSAD','AMSPTHECMM','HPGE'];
-    var SUBJECT_SUB = { 6: 'Principles of Structural Analysis and Design', 7: 'Applied Mathematics, Surveying, Principles of Transportation and Highway Engineering, Construction Management and Methods', 8: 'Hydraulics and Principles of Geotechnical Engineering' };
+    var SUBJECTS = ['Structural Engineering','Construction Engineering','Geotechnical Engineering','Hydraulics & Water Resources','Transportation Engineering','Mathematics & Surveying','PSAD','AMSPTHECMM','HPGE','Previous Batch'];
+    var PREV_BATCH = 9; // open to everyone with access, any role
+    var SUBJECT_SUB = { 6: 'Principles of Structural Analysis and Design', 7: 'Applied Mathematics, Surveying, Principles of Transportation and Highway Engineering, Construction Management and Methods', 8: 'Hydraulics and Principles of Geotechnical Engineering', 9: 'Recorded lectures from the previous batch' };
     // subjects 0-5 = Reviewee, 6-8 = Refresher (admin sees all)
     function load(k, d) { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } }
     function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
@@ -1085,13 +1093,13 @@
     function progressTag(p) { return '<em style="color:' + (p >= 70 ? '#16a34a' : '#dc2626') + '">' + (p >= 70 ? '✓ ' : '') + p + '%</em>'; }
     function openSubject(i) {
       var role = currentUser && currentUser.role;
-      if (role !== 'admin' && (role === 'refresher') !== (i >= 6)) return;
+      if (i !== PREV_BATCH && role !== 'admin' && (role === 'refresher') !== (i >= 6)) return;
       curSubject = i; curLesson = null; renderSubject(); navigateTo('subject-view'); }
     function pickLesson(id) { curLesson = id; renderSubject(); }
 
     function renderSubject() {
       var list = lessons.filter(function (l) { return l.subject === curSubject; });
-      var h = '<button class="sv-back" onclick="navigateTo(\'home-view\')">← All subjects</button><p class="eyebrow">' + (curSubject < 6 ? 'SUBJECT 0' + (curSubject + 1) : 'REFRESHER 0' + (curSubject - 5)) + '</p><h2>' + esc(SUBJECTS[curSubject]) + '</h2>' + (SUBJECT_SUB[curSubject] ? '<p class="sv-sub">' + esc(SUBJECT_SUB[curSubject]) + '</p>' : '') +
+      var h = '<button class="sv-back" onclick="navigateTo(\'home-view\')">← ' + (curSubject === PREV_BATCH ? 'Home' : 'All subjects') + '</button><p class="eyebrow">' + (curSubject === PREV_BATCH ? 'RECORDINGS' : curSubject < 6 ? 'SUBJECT 0' + (curSubject + 1) : 'REFRESHER 0' + (curSubject - 5)) + '</p><h2>' + esc(SUBJECTS[curSubject]) + '</h2>' + (SUBJECT_SUB[curSubject] ? '<p class="sv-sub">' + esc(SUBJECT_SUB[curSubject]) + '</p>' : '') +
         (currentUser && currentUser.role === 'admin' ? '<p style="margin:-15px 0 25px"><button type="button" class="text-btn" onclick="goAddLesson()">+ Add a lecture to this subject</button></p>' : '');
       if (!list.length) {
         h += '<p class="sv-empty">No lectures yet. Check back soon.</p>';
@@ -1165,7 +1173,7 @@
       });
       var pct = Math.round(right / l.quiz.length * 100);
       progress[l.id] = pct; save('angle_progress', progress);
-      logScore('Lecture Quiz', l.title, pct);
+      logScore('Lecture Quiz', l.title, pct, l.subject);
       var pass = pct >= 70;
       document.getElementById('quiz-result').innerHTML =
         '<div class="qr ' + (pass ? 'pass' : 'fail') + '"><div class="qr-pct">' + pct + '%</div><div>' + right + ' of ' + l.quiz.length + ' correct<br>' +
@@ -1189,13 +1197,78 @@
     function fmtDate(d) { return new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); }
 
     // ---------- Score history (shared by lecture quizzes & Terms quizzes, via Firestore) ----------
-    async function logScore(type, title, pct) {
+    async function logScore(type, title, pct, subject) {
       if (!currentUser) return;
       try {
         await window.fb.addDoc(window.fb.collection(window.fb.db, 'scores'), {
-          email: currentUser.email, role: currentUser.role, type: type, title: title, score: pct, date: new Date().toISOString()
+          email: currentUser.email, role: currentUser.role, type: type, title: title, score: pct, subject: subject == null ? null : subject, date: new Date().toISOString()
         });
       } catch (e) { console.error('Could not save score:', e); }
+    }
+
+    // ---------- Score categories ----------
+    var SCORE_SECTIONS = [
+      { name: 'REVIEW SCORES', groups: ['PSAD', 'AMSPTHECMM', 'HPGE'] },
+      { name: 'REFRESHER SCORES', groups: ['PSAD', 'AMSPTHECMM', 'HPGE'] },
+      { name: 'OTHER', groups: ['Previous Batch', 'Terms & Other'] }
+    ];
+    var SUB_ORDER = ['Structural Engineering', 'Mathematics & Surveying', 'Construction Engineering', 'Transportation Engineering', 'Geotechnical Engineering', 'Hydraulics and Water Resources', 'Recordings', 'Terms quizzes', 'Uncategorized'];
+    var REVIEW_CAT = {
+      0: ['PSAD', 'Structural Engineering'],
+      1: ['AMSPTHECMM', 'Construction Engineering'],
+      2: ['HPGE', 'Geotechnical Engineering'],
+      3: ['HPGE', 'Hydraulics and Water Resources'],
+      4: ['AMSPTHECMM', 'Transportation Engineering'],
+      5: ['AMSPTHECMM', 'Mathematics & Surveying']
+    };
+    var REFRESHER_CAT = { 6: 'PSAD', 7: 'AMSPTHECMM', 8: 'HPGE' };
+    function scoreCat(e) {
+      var i = e.subject;
+      if (i == null && e.type === 'Lecture Quiz') { // older scores: match by lesson title
+        var l = lessons.find(function (x) { return x.title === e.title; });
+        if (l) i = l.subject;
+      }
+      if (REVIEW_CAT[i]) return { sec: 'REVIEW SCORES', g: REVIEW_CAT[i][0], s: REVIEW_CAT[i][1] };
+      if (REFRESHER_CAT[i]) return { sec: 'REFRESHER SCORES', g: REFRESHER_CAT[i], s: '' };
+      if (i === 9) return { sec: 'OTHER', g: 'Previous Batch', s: 'Recordings' };
+      return { sec: 'OTHER', g: 'Terms & Other', s: e.type === 'Terms Quiz' ? 'Terms quizzes' : 'Uncategorized' };
+    }
+    function scoreCatLabel(e) {
+      var c = scoreCat(e);
+      return [c.sec === 'REVIEW SCORES' ? 'Review' : c.sec === 'REFRESHER SCORES' ? 'Refresher' : '', c.g, c.s].filter(Boolean).join(' › ');
+    }
+    function avgOf(a) { return Math.round(a.reduce(function (t, e) { return t + e.score; }, 0) / a.length); }
+    function scoreRow(e) {
+      var pass = e.score >= 70, tagClass = e.type === 'Lecture Quiz' ? 'lecture' : 'terms';
+      return '<article class="term-card" style="cursor:default"><div class="term-main"><h4>' + esc(e.title) + ' <span class="term-tag ' + tagClass + '">' + esc(e.type) + '</span></h4><p>' + fmtDate(e.date) + '</p></div>' +
+        '<div class="term-side"><span style="font-weight:800;font-size:18px;color:' + (pass ? '#16a34a' : '#dc2626') + '">' + e.score + '%</span></div></article>';
+    }
+    function groupedScoresHtml(log) {
+      var by = {};
+      log.forEach(function (e) {
+        var c = scoreCat(e);
+        by[c.sec] = by[c.sec] || {}; by[c.sec][c.g] = by[c.sec][c.g] || {};
+        (by[c.sec][c.g][c.s] = by[c.sec][c.g][c.s] || []).push(e);
+      });
+      var h = '';
+      SCORE_SECTIONS.forEach(function (sec) {
+        if (!by[sec.name]) return;
+        var secAll = [];
+        sec.groups.forEach(function (g) { if (by[sec.name][g]) Object.keys(by[sec.name][g]).forEach(function (k) { secAll = secAll.concat(by[sec.name][g][k]); }); });
+        h += '<h3 class="sc-sec">' + sec.name + ' <small>' + secAll.length + ' attempt' + (secAll.length > 1 ? 's' : '') + ' · avg ' + avgOf(secAll) + '%</small></h3>';
+        sec.groups.forEach(function (g) {
+          var grp = by[sec.name][g];
+          if (!grp) return;
+          var all = []; Object.keys(grp).forEach(function (k) { all = all.concat(grp[k]); });
+          h += '<details open class="sc-group"><summary>' + esc(g) + ' <small>' + all.length + ' attempt' + (all.length > 1 ? 's' : '') + ' · avg ' + avgOf(all) + '%</small></summary>';
+          Object.keys(grp).sort(function (x, y) { return SUB_ORDER.indexOf(x) - SUB_ORDER.indexOf(y); }).forEach(function (k) {
+            if (k) h += '<h5 class="sc-sub">' + esc(k) + ' <small>avg ' + avgOf(grp[k]) + '%</small></h5>';
+            h += '<div class="term-list">' + grp[k].map(scoreRow).join('') + '</div>';
+          });
+          h += '</details>';
+        });
+      });
+      return h;
     }
     async function renderScoresView() {
       var v = document.getElementById('scores-view');
@@ -1223,11 +1296,7 @@
           '<div class="stat-card"><div class="lbl">Average</div><div class="val">' + avg + '%</div></div>' +
           '<div class="stat-card"><div class="lbl">Best score</div><div class="val">' + best + '%</div></div>' +
           '<div class="stat-card"><div class="lbl">Passed (70%+)</div><div class="val">' + passed + '/' + log.length + '</div></div>' +
-          '</div><div class="term-list">' + log.map(function (e) {
-            var pass = e.score >= 70, tagClass = e.type === 'Lecture Quiz' ? 'lecture' : 'terms';
-            return '<article class="term-card" style="cursor:default"><div class="term-main"><h4>' + esc(e.title) + ' <span class="term-tag ' + tagClass + '">' + esc(e.type) + '</span></h4><p>' + fmtDate(e.date) + '</p></div>' +
-              '<div class="term-side"><span style="font-weight:800;font-size:18px;color:' + (pass ? '#16a34a' : '#dc2626') + '">' + e.score + '%</span></div></article>';
-          }).join('') + '</div>';
+          '</div>' + groupedScoresHtml(log);
       }
       v.innerHTML = '<div class="fc-wrap">' + h + '</div>';
     }
@@ -1663,10 +1732,10 @@
         lastGradesLog = log;
         if (!log.length) { box.innerHTML = '<p class="hint">No quiz attempts recorded yet.</p>'; return; }
         var rows = log.map(function (e) {
-          return '<tr><td>' + esc(e.email) + '</td><td>' + esc(e.role) + '</td><td>' + esc(e.type) + '</td><td>' + esc(e.title) + '</td>' +
+          return '<tr><td>' + esc(e.email) + '</td><td>' + esc(e.role) + '</td><td>' + esc(scoreCatLabel(e)) + '</td><td>' + esc(e.type) + '</td><td>' + esc(e.title) + '</td>' +
             '<td style="color:' + (e.score >= 70 ? '#34d399' : '#f87171') + ';font-weight:700">' + e.score + '%</td><td>' + fmtDate(e.date) + '</td></tr>';
         }).join('');
-        box.innerHTML = '<div class="grades-wrap"><table class="grades-table"><thead><tr><th>Student</th><th>Role</th><th>Type</th><th>Worksheet</th><th>Score</th><th>Date</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+        box.innerHTML = '<div class="grades-wrap"><table class="grades-table"><thead><tr><th>Student</th><th>Role</th><th>Category</th><th>Type</th><th>Worksheet</th><th>Score</th><th>Date</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
       } catch (e) {
         box.innerHTML = '<p class="hint" style="color:#f87171">Could not load scores: ' + esc(e.message) + '</p>';
       }
@@ -1675,7 +1744,7 @@
       if (!lastGradesLog.length) { alert('No scores recorded yet.'); return; }
       if (!window.XLSX) { alert('The spreadsheet library needs an internet connection to load once — try again in a moment.'); return; }
       var rows = lastGradesLog.map(function (e) {
-        return { Student: e.email, Role: e.role, Type: e.type, Worksheet: e.title, 'Score (%)': e.score, Date: fmtDate(e.date) };
+        return { Student: e.email, Role: e.role, Category: scoreCatLabel(e), Type: e.type, Worksheet: e.title, 'Score (%)': e.score, Date: fmtDate(e.date) };
       });
       var ws = XLSX.utils.json_to_sheet(rows);
       var wb = XLSX.utils.book_new();
@@ -1746,7 +1815,7 @@
     }
     function renderAdmin() {
       var sel = document.getElementById('la-subject');
-      if (!sel.options.length) sel.innerHTML = SUBJECTS.map(function (n, i) { return '<option value="' + i + '">' + (i >= 6 ? 'Refresher: ' : 'Reviewee: ') + esc(n) + '</option>'; }).join('');
+      if (!sel.options.length) sel.innerHTML = SUBJECTS.map(function (n, i) { return '<option value="' + i + '">' + (i === PREV_BATCH ? '' : i >= 6 ? 'Refresher: ' : 'Reviewee: ') + esc(n) + '</option>'; }).join('');
       document.getElementById('la-list').innerHTML = lessons.length ? lessons.map(function (l) {
         return '<div class="la-row"><span>' + esc(SUBJECTS[l.subject]) + ' — ' + esc(l.title) + ' (' + (l.video ? '🎬' : '') + (l.pdf ? '📄' : '') + ' · ' + l.quiz.length + ' Q)</span><span><button style="color:#93c5fd;margin-right:14px" onclick="editLesson(\'' + l.id + '\')">Edit</button><button onclick="deleteLesson(\'' + l.id + '\')">Delete</button></span></div>';
       }).join('') : '<p class="hint">Nothing added yet.</p>';

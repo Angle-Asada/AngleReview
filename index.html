@@ -437,6 +437,9 @@
     @media(max-width: 800px) { .sv-layout { grid-template-columns: 1fr; } }
 
 
+    .fc-nav { display: flex; align-items: center; gap: 10px; margin: 10px 0 14px; }
+    .fc-nav button { background: #27272a; color: #fff; border: 1px solid #3f3f46; padding: 10px 14px; border-radius: 4px; cursor: pointer; font: 600 12px Manrope, sans-serif; }
+    .fc-nav span { flex: 1; text-align: center; font-weight: 700; font-size: 13px; }
     .adm-hub { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
     .adm-tile { text-align: left; background: #18181b; border: 1px solid #27272a; border-radius: 6px; padding: 24px; color: #fff; cursor: pointer; font-family: inherit; transition: .2s; }
     .adm-tile:hover { border-color: #f59e0b; transform: translateY(-2px); }
@@ -707,19 +710,38 @@
         </div>
 
         <div id="flashcard-admin" class="hidden">
-          <h3 id="fc-h">Add a set of terms</h3>
-          <p class="hint">Kept separate from lecture uploads. Free sets are visible to everyone, even without an account. Premium sets are visible to everyone but only playable by logged-in Reviewees and Refreshers.</p>
-          <label>Set title</label><input id="fc-title" placeholder="e.g. Steel Design Formulas">
-          <label>Short description</label><input id="fc-desc" placeholder="e.g. Key equations for AISC steel design">
-          <label style="display:flex;align-items:center;gap:8px;margin-top:16px"><input type="checkbox" id="fc-premium" style="width:auto;margin:0"> Mark this set as Premium (Reviewee/Refresher login required)</label>
-          <label>Terms</label>
-          <div id="fcb"></div>
-          <button type="button" class="fcb-add" onclick="addFlashRow()">+ Add term</button>
-          <button type="button" class="primary-btn" id="fc-btn" style="margin-top:18px" onclick="saveFlashSet()">Add set</button>
-          <button type="button" class="text-btn" id="fc-cancel" style="margin-left:16px;color:#ddd" onclick="resetFlashForm()" hidden>Cancel editing</button>
-          <p id="fc-msg"></p>
-          <h3 style="margin-top:34px">Existing sets</h3>
-          <div id="fc-list"></div>
+          <div id="fc-list-screen">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+              <h3>Terms sets</h3>
+              <button type="button" class="primary-btn" onclick="newFlashSet()">+ New set</button>
+            </div>
+            <p class="hint">Kept separate from lecture uploads. Free sets are visible to everyone, even without an account. Premium sets are visible to everyone but only playable by logged-in Reviewees and Refreshers. Tap a set to edit it.</p>
+            <p id="fc-done" style="font-size:12px;color:#34d399;margin-top:10px"></p>
+            <div id="fc-list" style="margin-top:14px"></div>
+          </div>
+          <div id="fc-edit-screen" class="hidden">
+            <button type="button" class="text-btn" style="color:#f59e0b;margin-bottom:12px" onclick="resetFlashForm(); showFlashScreen('list')">← All sets</button>
+            <h3 id="fc-h">Add a set of terms</h3>
+            <label>Set title</label><input id="fc-title" placeholder="e.g. Steel Design Formulas">
+            <label>Short description</label><input id="fc-desc" placeholder="e.g. Key equations for AISC steel design">
+            <label style="display:flex;align-items:center;gap:8px;margin-top:16px"><input type="checkbox" id="fc-premium" style="width:auto;margin:0"> Mark this set as Premium (Reviewee/Refresher login required)</label>
+            <label>Terms (one at a time)</label>
+            <div class="fc-nav">
+              <button type="button" onclick="fcStep(-1)">← Prev</button>
+              <span id="fc-pos">Term 1 of 1</span>
+              <button type="button" onclick="fcStep(1)">Next →</button>
+              <input id="fc-jump" type="number" min="1" placeholder="Go to #" style="width:96px;margin:0" onchange="fcShow(+this.value - 1); this.value=''">
+            </div>
+            <div id="fcb"></div>
+            <button type="button" class="fcb-add" onclick="addFlashRow()">+ Add term</button>
+            <label>Or paste many at once</label>
+            <textarea id="fc-bulk" style="min-height:150px" placeholder="Question or term&#10;A) wrong option&#10;*B) the correct option&#10;C) wrong option&#10;D) wrong option&#10;&#10;(blank line, then the next question)"></textarea>
+            <button type="button" class="fcb-add" onclick="addBulkTerms()">Add pasted terms</button>
+            <p id="fc-bulk-msg" class="hint"></p>
+            <button type="button" class="primary-btn" id="fc-btn" style="margin-top:18px" onclick="saveFlashSet()">Add set</button>
+            <button type="button" class="text-btn" id="fc-cancel" style="margin-left:16px;color:#ddd" onclick="resetFlashForm(); showFlashScreen('list')" hidden>Cancel editing</button>
+            <p id="fc-msg"></p>
+          </div>
         </div>
 
         <div id="roles-admin" class="hidden">
@@ -871,6 +893,7 @@
       document.getElementById('admin-back-bar').classList.toggle('hidden', !open);
       Object.keys(ADMIN_PANELS).forEach(function (k) { document.getElementById(ADMIN_PANELS[k]).classList.toggle('hidden', ADMIN_PANELS[k] !== open); });
       if (key === 'scores') renderAdminGrades();
+      if (key === 'terms') { showFlashScreen('list'); document.getElementById('fc-done').textContent = ''; }
       window.scrollTo(0, 0);
     }
     function navigateTo(viewId) {
@@ -1610,7 +1633,7 @@
     function addFlashRow(pre) {
       var id = ++fcCount, d = document.createElement('div');
       d.className = 'qb-item';
-      d.innerHTML = '<div class="qb-head"><b>Term</b><button type="button" onclick="this.closest(\'.qb-item\').remove()">Remove</button></div><input class="fc-term" placeholder="Type the term or question">' +
+      d.innerHTML = '<div class="qb-head"><b>Term</b><button type="button" onclick="removeFlashRow(this)">Remove</button></div><input class="fc-term" placeholder="Type the term or question">' +
         [0, 1, 2, 3].map(function (i) {
           return '<div class="qb-opt"><input type="radio" name="fcc' + id + '" value="' + i + '"' + (i === 0 ? ' checked' : '') + '><input class="fc-opt" placeholder="Option ' + 'ABCD'[i] + '"></div>';
         }).join('') + '<p class="hint" style="color:#888">Select the circle next to the correct answer.</p>';
@@ -1619,7 +1642,37 @@
         d.querySelector('.fc-term').value = pre.term;
         d.querySelectorAll('.fc-opt').forEach(function (o, i) { o.value = pre.options[i] || ''; });
         d.querySelectorAll('input[type=radio]')[pre.correct].checked = true;
-      }
+      } else { fcShow(fcItems().length - 1); }
+    }
+    var fcCur = 0;
+    function fcItems() { return document.querySelectorAll('#fcb .qb-item'); }
+    function fcShow(i) {
+      var it = fcItems(), n = it.length;
+      if (!n) { addFlashRow(); return; }
+      i = Math.max(0, Math.min(n - 1, isNaN(i) ? 0 : i)); fcCur = i;
+      it.forEach(function (d, k) { d.style.display = k === i ? '' : 'none'; });
+      document.getElementById('fc-pos').textContent = 'Term ' + (i + 1) + ' of ' + n;
+    }
+    function fcStep(d) { fcShow(fcCur + d); }
+    function removeFlashRow(btn) { btn.closest('.qb-item').remove(); fcShow(fcCur); }
+    function showFlashScreen(w) {
+      document.getElementById('fc-list-screen').classList.toggle('hidden', w === 'edit');
+      document.getElementById('fc-edit-screen').classList.toggle('hidden', w !== 'edit');
+      window.scrollTo(0, 0);
+    }
+    function newFlashSet() { resetFlashForm(); showFlashScreen('edit'); }
+    function addBulkTerms() {
+      var ta = document.getElementById('fc-bulk'), msg = document.getElementById('fc-bulk-msg');
+      var all = parseQuiz(ta.value), qs = all.filter(function (x) { return x.opts.length <= 4; });
+      if (!qs.length) { msg.style.color = '#f87171'; msg.textContent = 'Nothing found. Type the question, then up to 4 option lines with a * in front of the correct one, and leave a blank line between questions.'; return; }
+      var cur = fcItems();
+      if (cur.length === 1 && !cur[0].querySelector('.fc-term').value.trim()) cur[0].remove();
+      var start = fcItems().length;
+      qs.forEach(function (x) { addFlashRow({ term: x.q, options: x.opts, correct: x.a }); });
+      fcShow(start);
+      ta.value = '';
+      msg.style.color = '#34d399';
+      msg.textContent = 'Added ' + qs.length + ' term' + (qs.length === 1 ? '' : 's') + (all.length > qs.length ? ' (' + (all.length - qs.length) + ' skipped: more than 4 choices)' : '') + '. Use Prev/Next to review, then click Save.';
     }
     function readFlashCards() {
       var out = [];
@@ -1659,8 +1712,9 @@
         ? window.fb.updateDoc(window.fb.doc(window.fb.db, 'flashSets', editingFlashId), data)
         : window.fb.addDoc(window.fb.collection(window.fb.db, 'flashSets'), data);
       task.then(function () {
-        resetFlashForm();
-        msg.style.color = '#34d399'; msg.textContent = (wasEdit ? 'Saved! (' : 'Added! (') + cards.length + ' term' + (cards.length === 1 ? '' : 's') + ')';
+        var totalRows = fcItems().length;
+        resetFlashForm(); showFlashScreen('list');
+        document.getElementById('fc-done').textContent = (wasEdit ? 'Saved "' : 'Added "') + title + '" — ' + cards.length + ' term' + (cards.length === 1 ? '' : 's') + (totalRows > cards.length ? ' (' + (totalRows - cards.length) + ' incomplete skipped)' : '');
       }).catch(function (e) {
         msg.style.color = '#f87171'; msg.textContent = 'Could not save: ' + e.message;
       });
@@ -1677,7 +1731,7 @@
       document.getElementById('fc-btn').textContent = 'Save changes';
       document.getElementById('fc-cancel').hidden = false;
       document.getElementById('fc-msg').textContent = '';
-      showAdminPanel('terms');
+      showAdminPanel('terms'); showFlashScreen('edit'); fcShow(0);
     }
     function deleteFlashSet(id) {
       if (editingFlashId === id) resetFlashForm();

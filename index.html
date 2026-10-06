@@ -419,6 +419,10 @@
     .fc-set-count { font: 500 11px 'DM Mono', monospace; color: #888; margin-top: 4px; }
     .fc-empty { color: #777; font-size: 14px; }
     .fc-wrap { max-width: 640px; margin: 0 auto; }
+    .pbar { height: 6px; background: #e5e5e5; border-radius: 99px; overflow: hidden; margin: 8px 0 22px; }
+    .pbar > i { display: block; height: 100%; background: #111; width: 0; transition: width .3s; }
+    .pbar.ok > i { background: #16a34a; }
+    .sv-prog span { font: 500 11px 'DM Mono', monospace; color: #888; letter-spacing: .04em; text-transform: uppercase; }
     .fc-progress { font: 500 11px 'DM Mono', monospace; color: #888; margin: -16px 0 24px; letter-spacing: 0.04em; text-transform: uppercase; }
     .fc-setup { margin-top: 6px; }
     .fc-setup label { display: block; font: 500 11px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; color: #555; margin-bottom: 10px; }
@@ -1151,6 +1155,8 @@
         h += '<p class="sv-empty">No lectures yet. Check back soon.</p>';
       } else {
         if (!curLesson || !list.some(function (l) { return l.id === curLesson; })) curLesson = list[0].id;
+        var passedN = list.filter(function (l) { return progress[l.id] >= 70; }).length;
+        h += '<div class="sv-prog"><span>' + passedN + ' of ' + list.length + ' lectures passed</span><div class="pbar' + (passedN === list.length ? ' ok' : '') + '"><i style="width:' + Math.round(passedN / list.length * 100) + '%"></i></div></div>';
         h += '<div class="sv-layout"><ol class="sv-list">' + list.map(function (l, i) {
           return '<li class="' + (l.id === curLesson ? 'on' : '') + '" onclick="pickLesson(\'' + l.id + '\')"><span>' + (i + 1) + '</span>' + esc(l.title) + (progress[l.id] != null ? progressTag(progress[l.id]) : '') + '</li>';
         }).join('') + '</ol><div id="sv-main"></div></div>';
@@ -1169,7 +1175,7 @@
         (l.video ? '<div class="sv-video" id="sv-video"><iframe src="https://drive.google.com/file/d/' + l.video + '/preview" allow="autoplay"></iframe>' + watermarkHtml() + '<div class="sv-block"></div></div>' : '') +
         '<h3>' + esc(l.title) + '</h3>' + nav;
       if (l.quiz.length) {
-        h += '<div class="quiz"><h4>Quick quiz</h4>' + l.quiz.map(function (q, i) {
+        h += '<div class="quiz"><h4>Quick quiz</h4><p class="fc-progress" id="qz-count" style="margin:0 0 6px">0 of ' + l.quiz.length + ' answered</p><div class="pbar" style="margin-top:0"><i id="qz-bar"></i></div>' + l.quiz.map(function (q, i) {
           return '<div class="q" data-i="' + i + '"><p>' + (i + 1) + '. ' + esc(q.q) + '</p>' + q.opts.map(function (o, j) {
             return '<button type="button" class="opt" data-j="' + j + '" onclick="pickOpt(this)">' + esc(o) + '</button>';
           }).join('') + '</div>';
@@ -1204,8 +1210,21 @@
     function pickOpt(b) {
       b.parentNode.querySelectorAll('.opt').forEach(function (o) { o.classList.remove('sel'); });
       b.classList.add('sel');
+      var qs = document.querySelectorAll('#sv-main .q'), done = 0;
+      qs.forEach(function (q) { if (q.querySelector('.opt.sel')) done++; });
+      var c = document.getElementById('qz-count'), bar = document.getElementById('qz-bar');
+      if (c && bar) { c.textContent = done + ' of ' + qs.length + ' answered'; bar.style.width = Math.round(done / qs.length * 100) + '%'; }
     }
 
+    function updateSubjectProgress() {
+      var box = document.querySelector('#subject-view .sv-prog');
+      if (!box) return;
+      var list = lessons.filter(function (x) { return x.subject === curSubject; });
+      var n = list.filter(function (x) { return progress[x.id] >= 70; }).length;
+      box.querySelector('span').textContent = n + ' of ' + list.length + ' lectures passed';
+      box.querySelector('i').style.width = Math.round(n / list.length * 100) + '%';
+      box.querySelector('.pbar').classList.toggle('ok', n === list.length);
+    }
     function checkQuiz() {
       var l = lessons.find(function (x) { return x.id === curLesson; }), right = 0;
       document.querySelectorAll('#sv-main .q').forEach(function (d) {
@@ -1218,7 +1237,7 @@
         });
       });
       var pct = Math.round(right / l.quiz.length * 100);
-      progress[l.id] = pct; save('angle_progress', progress);
+      progress[l.id] = pct; save('angle_progress', progress); updateSubjectProgress();
       logScore('Lecture Quiz', l.title, pct, l.subject);
       var pass = pct >= 70;
       document.getElementById('quiz-result').innerHTML =
@@ -1625,6 +1644,7 @@
       var q = curTermQuestions[curQIdx];
       v.innerHTML = '<div class="fc-wrap">' + head +
         '<p class="fc-progress">Term ' + (curQIdx + 1) + ' of ' + qtotal + '</p>' +
+        '<div class="pbar" style="margin:-14px 0 22px"><i style="width:' + Math.round((curQIdx + (curTermAnswered !== null ? 1 : 0)) / qtotal * 100) + '%"></i></div>' +
         '<div class="quiz"><div class="q"><p>' + esc(q.term) + '</p>' + q.options.map(function (o, i) {
           var cls = 'opt';
           if (curTermAnswered !== null) { if (o === q.correct) cls += ' ok'; else if (i === curTermAnswered) cls += ' bad'; }

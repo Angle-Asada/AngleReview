@@ -492,6 +492,38 @@
       #admin-view { padding: 30px 4vw !important; }
       #drawer:not(.open) { box-shadow: none; }
     }
+
+    /* ===== Button affordance: make text-style buttons look clickable ===== */
+    /* "Explore ↗" on subject cards */
+    .subject-card a { border: 1px solid currentColor; border-radius: 100px; padding: 10px 16px; background: rgba(0,0,0,0.05); transition: background 0.2s, color 0.2s, border-color 0.2s; }
+    .subject-card:hover a, .subject-card a:hover { background: #111; color: #fff; border-color: #111; }
+    .subject-card.featured a { background: rgba(255,255,255,0.12); }
+    .subject-card.featured:hover a, .subject-card.featured a:hover { background: #fff; color: #111; border-color: #fff; }
+
+    /* Underlined text buttons (Sign in, Previous / Next / Fullscreen, Try again, Cancel editing, etc.) */
+    .text-btn { border: 1px solid currentColor; border-radius: 100px; padding: 8px 16px; background: rgba(127,127,127,0.10); transition: background 0.2s, color 0.2s, border-color 0.2s; }
+    .text-btn:hover { background: rgba(127,127,127,0.25); border-color: currentColor; color: inherit; }
+    #subject-view .text-btn:hover, #scores-view .text-btn:hover, #guest-terms-view .text-btn:hover, #flashcard-view .text-btn:hover { background: #111; color: #fff; border-color: #111; }
+    .hero .text-btn:hover { color: #fff; }
+    .qr .text-btn { border: 1px solid currentColor; padding: 8px 16px; }
+
+    /* Back links and the drawer close button */
+    .sv-back, .back-btn, .dr-top button { border: 1px solid #bbb; border-radius: 100px; padding: 8px 14px; background: #fff; color: #333; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+    .back-btn { background: transparent; }
+    .sv-back:hover, .back-btn:hover, .dr-top button:hover { background: #111; color: #fff; border-color: #111; }
+    .ann-head { border: 1px solid #bbb; border-radius: 100px; padding: 7px 14px; color: #333; }
+    .ann-head:hover { background: #111; color: #fff; text-decoration: none; border-color: #111; }
+
+    /* Announcement rows: highlight on hover with an arrow */
+    .ann-item { padding: 12px 12px; border-radius: 4px; align-items: center; transition: background 0.2s; }
+    .ann-item::after { content: '→'; margin-left: auto; color: #888; transition: transform 0.2s, color 0.2s; }
+    .ann-item:hover { background: #ecece8; }
+    .ann-item:hover::after { color: #111; transform: translateX(4px); }
+    .ann-item:hover b { text-decoration: none; }
+
+    /* Lecture list items */
+    .sv-list li:hover:not(.on) { border-color: #111; background: #f0f0ec; }
+    .sv-list li:focus-visible, .subject-card:focus-visible, .term-card:focus-visible { outline: 2px solid #111; outline-offset: 2px; }
   </style>
 </head>
 <body>
@@ -504,7 +536,7 @@
       <a href="#home" onclick="navigateTo('home-view')">Home</a>
       <a href="#subjects" id="nav-subjects" onclick="navigateTo('home-view')">Subjects</a>
       <a href="#" onclick="event.preventDefault(); navigateTo('scores-view')">My Scores</a>
-      <a href="#" onclick="event.preventDefault(); openSubject(PREV_BATCH)">Previous Batch</a>
+      <a href="#" onclick="event.preventDefault(); openSubject(PREV_BATCH)">Prev Batch</a>
     </div>
     
     <!-- Dynamic Auth Container -->
